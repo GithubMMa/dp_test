@@ -21,7 +21,6 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt-get update
           sudo apt-get install -y curl zip
 
       - name: Setup Node and Puppeteer
