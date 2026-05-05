@@ -1,4 +1,4 @@
-name: 📦 Media Storage Manager
+name: 📦 Media Storage Manager2
 on:
   workflow_dispatch:
     inputs:
@@ -16,10 +16,10 @@ on:
         required: false
         default: ''
         type: string
-
 jobs:
-  download-media:
+  download-youtube:
     runs-on: ubuntu-latest
+    timeout-minutes: 180
     permissions:
       contents: write
     steps:
@@ -28,7 +28,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 0
-
+      - name: Configure Git for Large Files
+        run: |
+          git config --global http.postBuffer 524288000
+          git config --global http.maxRequestBuffer 100M
+          git config --global core.compression 0
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
       - name: Start WARP Container
         run: |
           echo "Starting Cloudflare WARP container..."
@@ -64,40 +70,40 @@ jobs:
             echo "WARP might not be fully active, but continuing anyway..."
             echo "Response: $FINAL"
           fi
-
       - name: Install Dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y python3-pip ffmpeg zip curl jq bc
           pip3 install --upgrade yt-dlp
-
-      - name: Download Media
+      - name: Download YouTube Video
         run: |
-          # Use the correct input variable name defined in workflow_dispatch
           URL="${{ github.event.inputs.Video_url }}"
           QUALITY="${{ github.event.inputs.quality }}"
           ZIP_PASSWORD="${{ github.event.inputs.password }}"
-          SPLIT_MB=90
+          
+          # Split size: 45MB to stay under GitHub's recommended 50MB limit for single files
+          SPLIT_MB=45
           SPLIT_BYTES=$(( SPLIT_MB * 1024 * 1024 ))
           
-          mkdir -p v_1_o tmp_downloads
-          echo "Media Storage Manager"
-          echo "https://LiveDL.ir"
-          echo ""
-          echo "Processing: $URL"
+          BACKUP_DIR="/tmp/video_backup_$$"
+          mkdir -p "$BACKUP_DIR"
+          echo "$BACKUP_DIR" > /tmp/backup_dir_path.txt
+          # تغییر نام پوشه از videos به gng_data
+          mkdir -p gng_data tmp_downloads
+          
+          echo "Downloading: $URL"
           echo "Quality: $QUALITY"
+          echo "Backup dir: $BACKUP_DIR"
+          echo "Split size: ${SPLIT_MB}MB"
           
           if [ -n "$ZIP_PASSWORD" ]; then
             echo "Password protection: ENABLED"
           else
             echo "Password protection: DISABLED"
           fi
-
-          # Function for proper URL encoding
           urlencode() {
             python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$1"
           }
-
           case "$QUALITY" in
             "audio")
               FORMAT="bestaudio"
@@ -118,8 +124,6 @@ jobs:
               FORMAT="bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
               ;;
           esac
-
-          # Array of different methods to try
           download_video() {
             local METHOD=$1
             echo "Trying download method $METHOD..."
@@ -129,6 +133,7 @@ jobs:
                   --proxy "socks5://127.0.0.1:1080" \
                   --format "$FORMAT" \
                   --merge-output-format mp4 \
+                  # تغییر نام خروجی به نام رندوم
                   --output "tmp_downloads/%(id)s.%(ext)s" \
                   --no-playlist \
                   --retries 10 \
@@ -206,7 +211,6 @@ jobs:
                 ;;
             esac
           }
-
           DOWNLOAD_SUCCESS=false
           for METHOD in 1 2 3 4 5 6; do
             if download_video $METHOD; then
@@ -218,30 +222,26 @@ jobs:
               sleep $((RANDOM % 10 + 5))
             fi
           done
-
           if [ "$DOWNLOAD_SUCCESS" = false ]; then
             echo "All download methods failed!"
             exit 1
           fi
-
           echo "Download complete!"
           echo "Files in tmp_downloads:"
           ls -la tmp_downloads/
-
           REPO_OWNER="${{ github.repository_owner }}"
           REPO_NAME="${{ github.event.repository.name }}"
           BRANCH="${GITHUB_REF_NAME}"
-
+          
+          # لیست کلمات برای تولید نام‌های گنگ
           RANDOM_WORDS=("alpha" "beta" "gamma" "delta" "epsilon" "zeta" "theta" "kappa" "lambda" "sigma" "omega" "nova" "star" "moon" "sun" "sky" "cloud" "river" "ocean" "mountain")
           get_random_word() {
             echo "${RANDOM_WORDS[$RANDOM % ${#RANDOM_WORDS[@]}]}_$RANDOM"
           }
-
           get_unique_folder() {
             local BASE_PATH="$1"
             local NAME="$2"
             local CHECK_BACKUP="$3"
-            # Check both in v_1_o and backup dir
             if [ ! -d "$BASE_PATH/$NAME" ] && [ ! -d "$BACKUP_DIR/$NAME" ]; then
               echo "$NAME"
               return
@@ -252,32 +252,23 @@ jobs:
             done
             echo "${NAME}_${RANDOM_SUFFIX}"
           }
-
-          # Create file to store video info
           > /tmp/video_info.txt
           FILE_INDEX=0
           for FILE in tmp_downloads/*; do
             [ -f "$FILE" ] || continue
             SIZE=$(stat -c%s "$FILE")
             BASENAME=$(basename "$FILE")
-            # Extract extension
+            # استخراج پسوند فایل
             EXT="${BASENAME##*.}"
-            # Create a completely random name for the file and folder to hide identity
-            # Format: random_string_random_number
-            RANDOM_NAME="data_$(head /dev/urandom | tr -dc A-Za-z0-9 | head -c 8)_$RANDOM"
-            
             FILE_INDEX=$((FILE_INDEX + 1))
-            echo "Processing: $BASENAME -> $RANDOM_NAME ($(( SIZE / 1024 / 1024 ))MB)"
+            echo "Processing: $BASENAME ($(( SIZE / 1024 / 1024 ))MB)"
             
-            FINAL_FOLDER_NAME=$(get_unique_folder "v_1_o" "$RANDOM_NAME" "true")
+            # تولید نام پوشه کاملاً تصادفی و گنگ
+            FINAL_FOLDER_NAME=$(get_random_word)
+            mkdir -p "$BACKUP_DIR/${FINAL_FOLDER_NAME}"
+            echo "Created backup folder: $BACKUP_DIR/${FINAL_FOLDER_NAME}"
             
-            # Create folder in v_1_o directory
-            mkdir -p "v_1_o/${FINAL_FOLDER_NAME}"
-            echo "Created folder: v_1_o/${FINAL_FOLDER_NAME}"
-            
-            # Save info for master README update
-            echo "${RANDOM_NAME}|${FINAL_FOLDER_NAME}" >> /tmp/video_info.txt
-            
+            echo "${BASENAME}|${FINAL_FOLDER_NAME}" >> /tmp/video_info.txt
             TEMP_NAME="video_${FILE_INDEX}"
             FOLDER_ENCODED=$(urlencode "${FINAL_FOLDER_NAME}")
             
@@ -293,229 +284,186 @@ jobs:
               for part in ${TEMP_NAME}.z[0-9]* ${TEMP_NAME}.zip; do
                 if [ -f "$part" ]; then
                   PART_EXT="${part##*.}"
-                  mv "$part" "v_1_o/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.${PART_EXT}"
+                  mv "$part" "$BACKUP_DIR/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.${PART_EXT}"
                   echo "  Created: ${FINAL_FOLDER_NAME}.${PART_EXT}"
                 fi
               done
               rm -f "${TEMP_NAME}.${EXT}"
               cd ..
-              PART_COUNT=$(ls "v_1_o/${FINAL_FOLDER_NAME}/"*.z* 2>/dev/null | wc -l)
+              PART_COUNT=$(ls "$BACKUP_DIR/${FINAL_FOLDER_NAME}/"*.z* 2>/dev/null | wc -l)
               echo "Created $PART_COUNT parts"
+              
               TOTAL_SIZE=0
-              for part_file in "v_1_o/${FINAL_FOLDER_NAME}"/*; do
+              for part_file in "$BACKUP_DIR/${FINAL_FOLDER_NAME}"/*; do
                 if [ -f "$part_file" ]; then
                   PART_SIZE=$(stat -c%s "$part_file")
                   TOTAL_SIZE=$((TOTAL_SIZE + PART_SIZE))
                 fi
               done
               TOTAL_SIZE_MB=$(echo "scale=2; $TOTAL_SIZE / 1024 / 1024" | bc)
+              
               DOWNLOAD_LINKS_MD=""
               LINK_NUM=0
-              for part_file in "v_1_o/${FINAL_FOLDER_NAME}"/*.z*; do
+              for part_file in "$BACKUP_DIR/${FINAL_FOLDER_NAME}"/*.z*; do
                 if [ -f "$part_file" ]; then
                   PART_BASENAME=$(basename "$part_file")
                   PART_ENCODED=$(urlencode "${PART_BASENAME}")
-                  RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/v_1_o/${FOLDER_ENCODED}/${PART_ENCODED}"
+                  RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/gng_data/${FOLDER_ENCODED}/${PART_ENCODED}"
                   LINK_NUM=$((LINK_NUM + 1))
                   DOWNLOAD_LINKS_MD="${DOWNLOAD_LINKS_MD}| ${LINK_NUM} | \`${PART_BASENAME}\` | [Download](${RAW_LINK}) |"$'\n'
                 fi
               done
-              README_FILE="v_1_o/${FINAL_FOLDER_NAME}/README.md"
-              {
-                printf '%s\n' ""
-                printf '%s\n' "---"
-                printf '%s\n' ""
-              } > "$README_FILE"
-              echo "Created README.md"
+              
+              # حذف ایجاد فایل README.md برای گنگ ماندن اطلاعات
+              # README_FILE="$BACKUP_DIR/${FINAL_FOLDER_NAME}/README.md"
+              # {
+              #   printf '%s\n' "# ${FILENAME_NO_EXT}"
+              #   printf '%s\n' ""
+              #   printf '%s\n' "---"
+              #   printf '%s\n' ""
+              #   printf '%s\n' "## Video Information"
+              #   printf '%s\n' ""
+              #   printf '%s\n' "| Property | Value |"
+              #   printf '%s\n' "|----------|-------|"
+              #   printf '%s\n' "| **Video Name** | \`${FILENAME_NO_EXT}\` |"
+              #   printf '%s\n' "| **Original Link** | [YouTube Video](${URL}) |"
+              #   printf '%s\n' "| **Total Size** | **${PART_COUNT} zip parts** - **${TOTAL_SIZE_MB} MB** |"
+              #   printf '%s\n' "| **Quality** | **${QUALITY}** |"
+              #   printf '%s\n' "| **Status** | **Complete (100%)** |"
+              #   if [ -n "$ZIP_PASSWORD" ]; then
+              #     printf '%s\n' "| **Password Protected** | **YES** |"
+              #   else
+              #     printf '%s\n' "| **Password Protected** | **NO** |"
+              #   fi
+              #   printf '%s\n' ""
+              #   printf '%s\n' "---"
+              #   printf '%s\n' ""
+              # } > "$README_FILE"
+              # echo "Created README.md"
             else
               if [ -n "$ZIP_PASSWORD" ]; then
                 echo "$BASENAME - creating password-protected zip"
                 cp "$FILE" "tmp_downloads/${TEMP_NAME}.${EXT}"
                 cd tmp_downloads
                 zip -j -P "$ZIP_PASSWORD" "${TEMP_NAME}.zip" "${TEMP_NAME}.${EXT}"
-                mv "${TEMP_NAME}.zip" "v_1_o/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.zip"
+                mv "${TEMP_NAME}.zip" "$BACKUP_DIR/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.zip"
                 rm -f "${TEMP_NAME}.${EXT}"
                 cd ..
                 SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
                 FILE_ENCODED=$(urlencode "${FINAL_FOLDER_NAME}.zip")
-                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/v_1_o/${FOLDER_ENCODED}/${FILE_ENCODED}"
-                README_FILE="v_1_o/${FINAL_FOLDER_NAME}/README.md"
-                {
-                  printf '%s\n' "# Media_File_${FILE_INDEX}"
-                  printf '%s\n' ""
-                  printf '%s\n' "---"
-                  printf '%s\n' ""
-                  printf '%s\n' "## Media Information"
-                  printf '%s\n' ""
-                  printf '%s\n' "| Property | Value |"
-                  printf '%s\n' "|----------|-------|"
-                  printf '%s\n' "| **Media ID** | \`${RANDOM_NAME}\` |"
-                  printf '%s\n' "| **Original Link** | [Media Link](${URL}) |"
-                  printf '%s\n' "| **Total Size** | **1 zip file** - **${SIZE_MB} MB** |"
-                  printf '%s\n' "| **Quality** | **${QUALITY}** |"
-                  printf '%s\n' "| **Status** | **Complete (100%)** |"
-                  printf '%s\n' "| **Password Protected** | **YES** |"
-                  printf '%s\n' ""
-                  printf '%s\n' "---"
-                  printf '%s\n' ""
-                  printf '%s\n' "## Download Link"
-                  printf '%s\n' ""
-                  printf '%s\n' "| # | File | Link |"
-                  printf '%s\n' "|---|------|------|"
-                  printf '%s\n' "| 1 | \`${FINAL_FOLDER_NAME}.zip\` | [Download](${RAW_LINK}) |"
-                  printf '%s\n' ""
-                  printf '%s\n' "---"
-                  printf '%s\n' ""
-                  printf '%s\n' ""
-                } > "$README_FILE"
-                echo "Created password-protected zip and README.md"
+                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/gng_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
+                # حذف ایجاد فایل README.md
+                # README_FILE="$BACKUP_DIR/${FINAL_FOLDER_NAME}/README.md"
+                # {
+                #   printf '%s\n' ""
+                #   printf '%s\n' "---"
+                #   printf '%s\n' ""
+                # } > "$README_FILE"
+                # echo "Created password-protected zip and README.md"
               else
                 echo "$BASENAME - copying mp4"
-                cp "$FILE" "v_1_o/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.${EXT}"
+                cp "$FILE" "$BACKUP_DIR/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.${EXT}"
                 SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
                 FILE_ENCODED=$(urlencode "${FINAL_FOLDER_NAME}.${EXT}")
-                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/v_1_o/${FOLDER_ENCODED}/${FILE_ENCODED}"
-                README_FILE="v_1_o/${FINAL_FOLDER_NAME}/README.md"
-                {
-                  printf '%s\n' ""
-                  printf '%s\n' "---"
-                  printf '%s\n' ""
-                } > "$README_FILE"
-                echo "Copied mp4 and created README.md"
+                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/gng_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
+                # حذف ایجاد فایل README.md
+                # README_FILE="$BACKUP_DIR/${FINAL_FOLDER_NAME}/README.md"
+                # {
+                #   printf '%s\n' ""
+                #   printf '%s\n' "---"
+                #   printf '%s\n' ""
+                # } > "$README_FILE"
+                # echo "Copied mp4 and created README.md"
               fi
             fi
           done
           rm -rf tmp_downloads
-
+          echo ""
+          echo "===== Backup folder contents ====="
+          find "$BACKUP_DIR" -type f | head -50
+          echo "===== Video info file ====="
+          cat /tmp/video_info.txt
       - name: Stop WARP Container
         if: always()
         run: |
           docker stop warp || true
           docker rm warp || true
-
-      - name: Commit & Push
+      - name: Commit and Push Files
         run: |
           BRANCH="${GITHUB_REF_NAME}"
           REPO_OWNER="${{ github.repository_owner }}"
           REPO_NAME="${{ github.event.repository.name }}"
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
-          echo "Media Storage - Preparing to commit files"
           
-          # Function for URL encoding
-          urlencode() {
-            python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$1"
-          }
-
-          # Function to regenerate master README from all folders
-          regenerate_master_readme() {
-            MASTER_README="v_1_o/README.md"
-            echo "Regenerating master README..."
-            # Start fresh README
-            {
-              echo "# STORED MEDIA LIST :"
-              echo ""
-              echo "----"
-              echo ""
-            } > "$MASTER_README"
+          echo "Syncing with remote repository..."
+          git fetch origin "$BRANCH"
+          git reset --hard origin/"$BRANCH"
+          
+          # تغییر نام پوشه از videos به gng_data
+          mkdir -p gng_data
+          BACKUP_DIR=$(cat /tmp/backup_dir_path.txt)
+          cp -r "$BACKUP_DIR"/* gng_data/
+          
+          # Check if there are any files to commit
+          if [ ! -d "gng_data" ] || [ -z "$(ls -A gng_data)" ]; then
+            echo "No files to commit."
+            exit 0
+          fi
+          
+          # Generate Master README (Optional: Can be removed or kept generic)
+          # اگر می‌خواهید حتی لیست پوشه‌ها هم گنگ باشد، کل بلوک زیر را کامنت کنید
+          MASTER_README="gng_data/README.md"
+          {
+            echo "# DOWNLOADED VIDEOS LIST :"
+            echo ""
+            echo "----"
+            echo ""
+          } > "$MASTER_README"
+          
+          VIDEO_EMOJIS=("🎬" "🎥" "📽️" "🎞️" "📺" "🎦" "🎭" "🎪" "🎯" "🎮" "🎵" "🎶" "🎸" "🎹" "🎤")
+          NUM=0
+          
+          for folder in gng_data/*/; do
+            [ -d "$folder" ] || continue
+            FOLDER_NAME=$(basename "$folder")
+            # اگر پوشه README.md است، پردازش نشود
+            [ "$FOLDER_NAME" = "README.md" ] && continue
             
-            # Video emojis
-            VIDEO_EMOJIS=("📦" "📁" "📂" "💾" "🗄️" "📀" "📼" "🎞️" "📽️" "📺" "🎵" "🎶" "🎸" "🎹" "🎤")
+            NUM=$((NUM + 1))
+            RANDOM_EMOJI="${VIDEO_EMOJIS[$RANDOM % ${#VIDEO_EMOJIS[@]}]}"
+            FOLDER_ENCODED=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$FOLDER_NAME")
+            FOLDER_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/tree/${BRANCH}/gng_data/${FOLDER_ENCODED}"
+            printf -- "- %s - %s [%s](%s)\n" "$NUM" "$RANDOM_EMOJI" "$FOLDER_NAME" "$FOLDER_LINK" >> "$MASTER_README"
+          done
+          
+          echo "Master README regenerated with $NUM videos"
+          
+          # Add all files
+          git add -A gng_data/
+          
+          if ! git diff --cached --quiet; then
+            git commit -m "[LiveD] YouTube download [skip ci]"
             
-            # Counter for numbering
-            NUM=0
-            
-            # Add all existing video folders
-            for folder in v_1_o/*/; do
-              [ -d "$folder" ] || continue
-              FOLDER_NAME=$(basename "$folder")
-              # Skip if it's not a media folder (check for README.md inside)
-              [ -f "$folder/README.md" ] || continue
-              NUM=$((NUM + 1))
-              RANDOM_EMOJI="${VIDEO_EMOJIS[$RANDOM % ${#VIDEO_EMOJIS[@]}]}"
-              FOLDER_ENCODED=$(urlencode "$FOLDER_NAME")
-              FOLDER_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/tree/${BRANCH}/v_1_o/${FOLDER_ENCODED}"
-              
-              # FIX: Use bullet list format with hyphen, number, emoji, and link - ensures each on a new line
-              printf -- "- %s - %s [%s](%s)\n" "$NUM" "$RANDOM_EMOJI" "$FOLDER_NAME" "$FOLDER_LINK" >> "$MASTER_README"
-            done
-            echo "Master README regenerated with $NUM media files"
-          }
-
-          # Push with retry - KEEPS FILES SAFE
-          push_with_retry() {
-            local MAX_RETRIES=20
-            local RETRY=0
-            while [ $RETRY -lt $MAX_RETRIES ]; do
-              RETRY=$((RETRY + 1))
-              echo ""
-              echo "========== Push attempt $RETRY of $MAX_RETRIES =========="
-              
-              # Always start fresh from remote to avoid conflicts
-              echo "Fetching and resetting to remote..."
-              git fetch origin "$BRANCH"
-              git reset --hard origin/"$BRANCH"
-              
-              # Copy our backup files into v_1_o folder
-              echo "Copying backup files to v_1_o folder..."
-              mkdir -p v_1_o
-              # Since we already moved files to v_1_o/ in the previous step, 
-              # we just need to ensure they are staged. 
-              # However, if we reset hard, we might lose uncommitted changes if not careful.
-              # But since we are in a fresh checkout + run, and we modified files in place,
-              # a reset --hard would wipe them IF they weren't committed yet.
-              # Wait, the previous step ran in the same job. 
-              # The files are in the working directory. 
-              # git reset --hard origin/branch will DELETE uncommitted changes.
-              # We must commit first or stash.
-              
-              # Better approach: Stash changes, fetch, reset, pop stash
-              echo "Stashing local changes..."
-              git stash save "Media Storage" 2>/dev/null || true
-              
-              echo "Fetching and resetting to remote..."
-              git fetch origin "$BRANCH"
-              git reset --hard origin/"$BRANCH"
-              
-              echo "Popping stashed changes..."
-              git stash pop 2>/dev/null || true
-              
-              # Regenerate master README with ALL media (existing + new)
-              regenerate_master_readme
-              
-              # Show what we're adding
-              echo "Files to be added:"
-              git status --short v_1_o/ | head -20 || true
-              
-              # Add all media files
-              git add -A v_1_o/
-              
-              # Check if there's anything to commit
-              if git diff --cached --quiet; then
-                echo "No new changes to commit (files might already exist)"
-                return 0
-              fi
-              
-              # Commit
-              echo "Committing..."
-              git commit -m "[Media Storage] Media download [skip ci]"
-              
-              # Try to push
-              echo "Pushing..."
-              if git push origin HEAD:"$BRANCH" 2>&1; then
+            # Push with retries
+            PUSH_RETRY=0
+            while [ $PUSH_RETRY -lt 10 ]; do
+              PUSH_RETRY=$((PUSH_RETRY + 1))
+              echo "Push attempt $PUSH_RETRY/10..."
+              if timeout 300 git push origin HEAD:"$BRANCH"; then
                 echo "Push successful!"
-                return 0
+                break
               else
-                WAIT_TIME=$((3 + RANDOM % 10))
-                echo "Push failed (probably another workflow pushed). Waiting ${WAIT_TIME}s..."
-                sleep $WAIT_TIME
+                echo "Push failed, retry $PUSH_RETRY/10..."
+                sleep $((3 + RANDOM % 7))
+                git fetch origin "$BRANCH"
+                git reset --hard origin/"$BRANCH"
+                mkdir -p gng_data
+                cp -r "$BACKUP_DIR"/* gng_data/
+                git add -A gng_data/
+                if ! git diff --cached --quiet; then
+                  git commit -m "[LiveD] YouTube download [skip ci]"
+                fi
               fi
             done
-            echo "ERROR: All push attempts failed!"
-            return 1
-          }
-
-          # Run the push with retry
-          push_with_retry
-          echo ""
-          echo "All files pushed successfully"
+          else
+            echo "No changes to commit."
+          fi
