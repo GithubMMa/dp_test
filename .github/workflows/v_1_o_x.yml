@@ -72,7 +72,6 @@ jobs:
           fi
       - name: Install Dependencies
         run: |
-          sudo apt-get update
           sudo apt-get install -y python3-pip ffmpeg zip curl jq bc
           pip3 install --upgrade yt-dlp
       - name: Download Media Video
