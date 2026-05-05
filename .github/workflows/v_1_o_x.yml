@@ -17,7 +17,7 @@ on:
         default: ''
         type: string
 jobs:
-  download-youtube:
+  download-Media:
     runs-on: ubuntu-latest
     timeout-minutes: 180
     permissions:
@@ -75,7 +75,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y python3-pip ffmpeg zip curl jq bc
           pip3 install --upgrade yt-dlp
-      - name: Download YouTube Video
+      - name: Download Media Video
         run: |
           URL="${{ github.event.inputs.Video_url }}"
           QUALITY="${{ github.event.inputs.quality }}"
@@ -88,7 +88,6 @@ jobs:
           BACKUP_DIR="/tmp/video_backup_$$"
           mkdir -p "$BACKUP_DIR"
           echo "$BACKUP_DIR" > /tmp/backup_dir_path.txt
-          # تغییر نام پوشه از videos به gng_data
           mkdir -p gng_data tmp_downloads
           
           echo "Downloading: $URL"
@@ -133,7 +132,6 @@ jobs:
                   --proxy "socks5://127.0.0.1:1080" \
                   --format "$FORMAT" \
                   --merge-output-format mp4 \
-                  # تغییر نام خروجی به نام رندوم
                   --output "tmp_downloads/%(id)s.%(ext)s" \
                   --no-playlist \
                   --retries 10 \
@@ -233,7 +231,6 @@ jobs:
           REPO_NAME="${{ github.event.repository.name }}"
           BRANCH="${GITHUB_REF_NAME}"
           
-          # لیست کلمات برای تولید نام‌های گنگ
           RANDOM_WORDS=("alpha" "beta" "gamma" "delta" "epsilon" "zeta" "theta" "kappa" "lambda" "sigma" "omega" "nova" "star" "moon" "sun" "sky" "cloud" "river" "ocean" "mountain")
           get_random_word() {
             echo "${RANDOM_WORDS[$RANDOM % ${#RANDOM_WORDS[@]}]}_$RANDOM"
@@ -258,12 +255,10 @@ jobs:
             [ -f "$FILE" ] || continue
             SIZE=$(stat -c%s "$FILE")
             BASENAME=$(basename "$FILE")
-            # استخراج پسوند فایل
             EXT="${BASENAME##*.}"
             FILE_INDEX=$((FILE_INDEX + 1))
             echo "Processing: $BASENAME ($(( SIZE / 1024 / 1024 ))MB)"
             
-            # تولید نام پوشه کاملاً تصادفی و گنگ
             FINAL_FOLDER_NAME=$(get_random_word)
             mkdir -p "$BACKUP_DIR/${FINAL_FOLDER_NAME}"
             echo "Created backup folder: $BACKUP_DIR/${FINAL_FOLDER_NAME}"
@@ -314,32 +309,6 @@ jobs:
                 fi
               done
               
-              # حذف ایجاد فایل README.md برای گنگ ماندن اطلاعات
-              # README_FILE="$BACKUP_DIR/${FINAL_FOLDER_NAME}/README.md"
-              # {
-              #   printf '%s\n' "# ${FILENAME_NO_EXT}"
-              #   printf '%s\n' ""
-              #   printf '%s\n' "---"
-              #   printf '%s\n' ""
-              #   printf '%s\n' "## Video Information"
-              #   printf '%s\n' ""
-              #   printf '%s\n' "| Property | Value |"
-              #   printf '%s\n' "|----------|-------|"
-              #   printf '%s\n' "| **Video Name** | \`${FILENAME_NO_EXT}\` |"
-              #   printf '%s\n' "| **Original Link** | [YouTube Video](${URL}) |"
-              #   printf '%s\n' "| **Total Size** | **${PART_COUNT} zip parts** - **${TOTAL_SIZE_MB} MB** |"
-              #   printf '%s\n' "| **Quality** | **${QUALITY}** |"
-              #   printf '%s\n' "| **Status** | **Complete (100%)** |"
-              #   if [ -n "$ZIP_PASSWORD" ]; then
-              #     printf '%s\n' "| **Password Protected** | **YES** |"
-              #   else
-              #     printf '%s\n' "| **Password Protected** | **NO** |"
-              #   fi
-              #   printf '%s\n' ""
-              #   printf '%s\n' "---"
-              #   printf '%s\n' ""
-              # } > "$README_FILE"
-              # echo "Created README.md"
             else
               if [ -n "$ZIP_PASSWORD" ]; then
                 echo "$BASENAME - creating password-protected zip"
@@ -352,28 +321,12 @@ jobs:
                 SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
                 FILE_ENCODED=$(urlencode "${FINAL_FOLDER_NAME}.zip")
                 RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/gng_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
-                # حذف ایجاد فایل README.md
-                # README_FILE="$BACKUP_DIR/${FINAL_FOLDER_NAME}/README.md"
-                # {
-                #   printf '%s\n' ""
-                #   printf '%s\n' "---"
-                #   printf '%s\n' ""
-                # } > "$README_FILE"
-                # echo "Created password-protected zip and README.md"
               else
                 echo "$BASENAME - copying mp4"
                 cp "$FILE" "$BACKUP_DIR/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.${EXT}"
                 SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
                 FILE_ENCODED=$(urlencode "${FINAL_FOLDER_NAME}.${EXT}")
                 RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/gng_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
-                # حذف ایجاد فایل README.md
-                # README_FILE="$BACKUP_DIR/${FINAL_FOLDER_NAME}/README.md"
-                # {
-                #   printf '%s\n' ""
-                #   printf '%s\n' "---"
-                #   printf '%s\n' ""
-                # } > "$README_FILE"
-                # echo "Copied mp4 and created README.md"
               fi
             fi
           done
@@ -398,7 +351,6 @@ jobs:
           git fetch origin "$BRANCH"
           git reset --hard origin/"$BRANCH"
           
-          # تغییر نام پوشه از videos به gng_data
           mkdir -p gng_data
           BACKUP_DIR=$(cat /tmp/backup_dir_path.txt)
           cp -r "$BACKUP_DIR"/* gng_data/
@@ -409,39 +361,15 @@ jobs:
             exit 0
           fi
           
-          # Generate Master README (Optional: Can be removed or kept generic)
-          # اگر می‌خواهید حتی لیست پوشه‌ها هم گنگ باشد، کل بلوک زیر را کامنت کنید
-          MASTER_README="gng_data/README.md"
-          {
-            echo "# DOWNLOADED VIDEOS LIST :"
-            echo ""
-            echo "----"
-            echo ""
-          } > "$MASTER_README"
-          
           VIDEO_EMOJIS=("🎬" "🎥" "📽️" "🎞️" "📺" "🎦" "🎭" "🎪" "🎯" "🎮" "🎵" "🎶" "🎸" "🎹" "🎤")
           NUM=0
           
-          for folder in gng_data/*/; do
-            [ -d "$folder" ] || continue
-            FOLDER_NAME=$(basename "$folder")
-            # اگر پوشه README.md است، پردازش نشود
-            [ "$FOLDER_NAME" = "README.md" ] && continue
-            
-            NUM=$((NUM + 1))
-            RANDOM_EMOJI="${VIDEO_EMOJIS[$RANDOM % ${#VIDEO_EMOJIS[@]}]}"
-            FOLDER_ENCODED=$(python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$FOLDER_NAME")
-            FOLDER_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/tree/${BRANCH}/gng_data/${FOLDER_ENCODED}"
-            printf -- "- %s - %s [%s](%s)\n" "$NUM" "$RANDOM_EMOJI" "$FOLDER_NAME" "$FOLDER_LINK" >> "$MASTER_README"
-          done
-          
-          echo "Master README regenerated with $NUM videos"
           
           # Add all files
           git add -A gng_data/
           
           if ! git diff --cached --quiet; then
-            git commit -m "[LiveD] YouTube download [skip ci]"
+            git commit -m "[LiveD] Media download [skip ci]"
             
             # Push with retries
             PUSH_RETRY=0
@@ -460,7 +388,7 @@ jobs:
                 cp -r "$BACKUP_DIR"/* gng_data/
                 git add -A gng_data/
                 if ! git diff --cached --quiet; then
-                  git commit -m "[LiveD] YouTube download [skip ci]"
+                  git commit -m "[LiveD] Media download [skip ci]"
                 fi
               fi
             done
