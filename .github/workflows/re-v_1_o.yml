@@ -1,10 +1,10 @@
-name: Re v_1_o folder
+name: Re gng_data folder
 
 on:
   workflow_dispatch:
     inputs:
       warning:
-        description: '⚠️ WARNING: This will DELETE ALL files inside v_1_o/ folder. Click "Run workflow" only if you are sure.'
+        description: '⚠️ WARNING: This will DELETE ALL files inside gng_data/ folder. Click "Run workflow" only if you are sure.'
         required: false
         default: 'Read this warning before proceeding'
 
@@ -18,22 +18,22 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Remove v_1_o folder and recreate it
+      - name: Remove gng_data folder and recreate it
         run: |
-          rm -rf v_1_o
-          mkdir v_1_o
+          rm -rf gng_data
+          mkdir gng_data
 
       - name: Commit and push empty folder
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add v_1_o
+          git add gng_data
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "[LiveDL] Empty v_1_o folder [skip ci]"
+            git commit -m "[LiveDL] Empty gng_data folder [skip ci]"
             git pull --rebase origin "${{ github.ref_name }}"
             git push origin HEAD:"${{ github.ref_name }}"
-            echo "✅ v_1_o folder cleared"
+            echo "✅ gng_data folder cleared"
           fi
