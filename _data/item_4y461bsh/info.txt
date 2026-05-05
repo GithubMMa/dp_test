@@ -1,0 +1,46 @@
+# Split Archive
+
+---
+
+| Key | Value |
+|-----|-------|
+| **Original** | `acestep-5Hz-lm-1.7B-Q8_0.gguf` |
+| **Size** | 1884 MB |
+| **Parts** | 21 |
+| **Status** | **Done** |
+| **Locked** | **YES** |
+
+---
+
+| File | Link |
+|------|------|
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z01` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z01) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z02` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z02) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z03` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z03) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z04` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z04) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z05` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z05) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z06` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z06) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z07` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z07) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z08` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z08) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z09` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z09) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z10` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z10) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z11` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z11) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z12` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z12) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z13` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z13) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z14` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z14) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z15` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z15) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z16` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z16) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z17` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z17) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z18` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z18) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z19` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z19) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.z20` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.z20) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.zip` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.zip) |
+| `acestep-5Hz-lm-1.7B-Q8_0.gguf.zip` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_4y461bsh/acestep-5Hz-lm-1.7B-Q8_0.gguf.zip) |
+
+---
+
+## Extract
+
+**Win:** Use 7-Zip
+**Linux:** `zip -F acestep-5Hz-lm-1.7B-Q8_0.gguf.zip --out combined.zip && unzip combined.zip`
+
