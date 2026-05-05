@@ -1,0 +1,46 @@
+# Split Archive
+
+---
+
+| Key | Value |
+|-----|-------|
+| **Original** | `acestep-v15-turbo-Q6_K.gguf` |
+| **Size** | 1879 MB |
+| **Parts** | 21 |
+| **Status** | **Done** |
+| **Locked** | **YES** |
+
+---
+
+| File | Link |
+|------|------|
+| `acestep-v15-turbo-Q6_K.gguf.z01` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z01) |
+| `acestep-v15-turbo-Q6_K.gguf.z02` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z02) |
+| `acestep-v15-turbo-Q6_K.gguf.z03` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z03) |
+| `acestep-v15-turbo-Q6_K.gguf.z04` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z04) |
+| `acestep-v15-turbo-Q6_K.gguf.z05` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z05) |
+| `acestep-v15-turbo-Q6_K.gguf.z06` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z06) |
+| `acestep-v15-turbo-Q6_K.gguf.z07` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z07) |
+| `acestep-v15-turbo-Q6_K.gguf.z08` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z08) |
+| `acestep-v15-turbo-Q6_K.gguf.z09` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z09) |
+| `acestep-v15-turbo-Q6_K.gguf.z10` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z10) |
+| `acestep-v15-turbo-Q6_K.gguf.z11` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z11) |
+| `acestep-v15-turbo-Q6_K.gguf.z12` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z12) |
+| `acestep-v15-turbo-Q6_K.gguf.z13` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z13) |
+| `acestep-v15-turbo-Q6_K.gguf.z14` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z14) |
+| `acestep-v15-turbo-Q6_K.gguf.z15` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z15) |
+| `acestep-v15-turbo-Q6_K.gguf.z16` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z16) |
+| `acestep-v15-turbo-Q6_K.gguf.z17` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z17) |
+| `acestep-v15-turbo-Q6_K.gguf.z18` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z18) |
+| `acestep-v15-turbo-Q6_K.gguf.z19` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z19) |
+| `acestep-v15-turbo-Q6_K.gguf.z20` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.z20) |
+| `acestep-v15-turbo-Q6_K.gguf.zip` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.zip) |
+| `acestep-v15-turbo-Q6_K.gguf.zip` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/_data/item_fhwislg5/acestep-v15-turbo-Q6_K.gguf.zip) |
+
+---
+
+## Extract
+
+**Win:** Use 7-Zip
+**Linux:** `zip -F acestep-v15-turbo-Q6_K.gguf.zip --out combined.zip && unzip combined.zip`
+
