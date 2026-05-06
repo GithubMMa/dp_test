@@ -54,20 +54,10 @@ jobs:
           
           mkdir -p assets/_data _tmp
           
-          # Function to generate random alphanumeric string
-          get_random_id() {
-            local len=8
-            local chars="abcdefghijklmnopqrstuvwxyz0123456789"
-            local result=""
-            for (( i=0; i<len; i++ )); do
-              result="${result}${chars:$((RANDOM % ${#chars})):1}"
-            done
-            echo "$result"
-          }
 
           # Function to get folder name
           get_unique_folder() {
-            local unique_folder_name = "${{ github.event.inputs.unique_folder_name }}"
+            local unique_folder_name="${{ github.event.inputs.unique_folder_name }}"
             echo "$unique_folder_name"
           }
 
@@ -165,9 +155,13 @@ jobs:
               SIZE=$(stat -c%s "$FILE")
               BASENAME=$(basename "$FILE")
               BASENAME_NO_EXT="${BASENAME%.*}"
-              U_F_NAME=$(get_unique_folder)
-              mkdir -p "assets/_data/$U_F_NAME"
               
+              U_F_NAME=$(get_unique_folder)
+              if [ -z "$U_F_NAME" ]; then
+                U_F_NAME="default_folder"
+              fi
+              
+              mkdir -p "assets/_data/$U_F_NAME"
               if [ "$SIZE" -gt "$SPLIT_THRESHOLD_BYTES" ]; then
                 echo "Splitting large file: $BASENAME"
                 if [ -n "$ZIP_PASSWORD" ]; then
