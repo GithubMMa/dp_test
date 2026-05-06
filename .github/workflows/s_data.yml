@@ -187,15 +187,6 @@ jobs:
             echo "- Media: $MEDIA_COUNT"
           } > "$FOLDER/index.md"
           
-          # Update history in browse.md (instead of README.md)
-          BROWSE_FILE="browse.md"
-          if [ ! -f "$BROWSE_FILE" ]; then
-            echo "Browsed." > "$BROWSE_FILE"
-            echo "" >> "$BROWSE_FILE"
-          fi
-          # Add relative link to the index.md file
-          echo "" >> "$BROWSE_FILE"
-          
           # Save variables for zip step
           echo "DOMAIN=$DOMAIN" >> $GITHUB_ENV
           echo "SLUG=$SLUG" >> $GITHUB_ENV
@@ -213,7 +204,6 @@ jobs:
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
-          git add assets/s_data/ browse.md
           
           if git diff --staged --quiet; then
             echo "Nothing to commit"
