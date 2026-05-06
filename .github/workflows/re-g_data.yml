@@ -1,12 +1,12 @@
-name: Re gng_data folder
+name: Re g_data folder
 
 on:
   workflow_dispatch:
     inputs:
       warning:
-        description: '⚠️ WARNING: This will DELETE ALL files inside gng_data/ folder. Click "Run workflow" only if you are sure.'
+        description: 'WARNING: This will DELETE ALL files inside g_data/ folder. are you sure?'
         required: false
-        default: 'Read this warning before proceeding'
+        default: 'show warning before proceeding'
 
 jobs:
   delete:
@@ -17,23 +17,26 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
 
-      - name: Remove gng_data folder and recreate it
+      - name: Remove g_data folder and recreate it
         run: |
-          rm -rf gng_data
-          mkdir gng_data
+          rm -rf g_data
+          mkdir g_data
 
       - name: Commit and push empty folder
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
 
-          git add gng_data
+          git add g_data
           if git diff --staged --quiet; then
             echo "No changes to commit"
           else
-            git commit -m "[LiveDL] Empty gng_data folder [skip ci]"
+            git commit -m "Empty g_data folder [skip ci]"
             git pull --rebase origin "${{ github.ref_name }}"
             git push origin HEAD:"${{ github.ref_name }}"
-            echo "✅ gng_data folder cleared"
+            echo "g_data folder cleared"
           fi
