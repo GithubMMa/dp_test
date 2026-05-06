@@ -56,7 +56,7 @@ jobs:
             echo "Encryption: OFF"
           fi
           
-          mkdir -p _data _tmp
+          mkdir -p assets/_data _tmp
           
           # Function to generate random alphanumeric string
           get_random_id() {
@@ -88,8 +88,8 @@ jobs:
             local ORIG_FILENAME="$1"
             local ERROR_MSG="$2"
             local URL="$3"
-            local RAND_FOLDER=$(get_unique_folder "_data" "err")
-            mkdir -p "_data/$RAND_FOLDER"
+            local RAND_FOLDER=$(get_unique_folder "assets/_data" "err")
+            mkdir -p "assets/_data/$RAND_FOLDER"
             {
               echo "# Error Log"
               echo ""
@@ -104,7 +104,7 @@ jobs:
               echo "\`\`\`"
               echo "$ERROR_MSG"
               echo "\`\`\`"
-            } > "_data/$RAND_FOLDER/log.txt"
+            } > "assets/_data/$RAND_FOLDER/log.txt"
           }
 
           download_with_retry() {
@@ -175,22 +175,22 @@ jobs:
           if [ "$MODE" = "zip" ]; then
             if [ -n "$(ls -A _tmp 2>/dev/null)" ]; then
               RAND_ARCHIVE=$(get_random_id)
-              RAND_FOLDER=$(get_unique_folder "_data" "pkg")
-              mkdir -p "_data/$RAND_FOLDER"
+              RAND_FOLDER=$(get_unique_folder "assets/_data" "pkg")
+              mkdir -p "assets/_data/$RAND_FOLDER"
               
               echo "Zipping into: $RAND_FOLDER/$RAND_ARCHIVE.zip"
               
               if [ -n "$ZIP_PASSWORD" ]; then
-                zip -j -P "$ZIP_PASSWORD" "_data/$RAND_FOLDER/${RAND_ARCHIVE}.zip" _tmp/*
+                zip -j -P "$ZIP_PASSWORD" "assets/_data/$RAND_FOLDER/${RAND_ARCHIVE}.zip" _tmp/*
               else
-                zip -j "_data/$RAND_FOLDER/${RAND_ARCHIVE}.zip" _tmp/*
+                zip -j "assets/_data/$RAND_FOLDER/${RAND_ARCHIVE}.zip" _tmp/*
               fi
               
-              ZIP_SIZE=$(stat -c%s "_data/$RAND_FOLDER/${RAND_ARCHIVE}.zip")
+              ZIP_SIZE=$(stat -c%s "assets/_data/$RAND_FOLDER/${RAND_ARCHIVE}.zip")
               ZIP_SIZE_MB=$(echo "scale=2; $ZIP_SIZE / 1024 / 1024" | bc)
               FOLDER_ENCODED=$(echo "${RAND_FOLDER}" | sed 's/ /%20/g')
               FILE_ENCODED=$(echo "${RAND_ARCHIVE}.zip" | sed 's/ /%20/g')
-              RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
+              RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/assets/_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
               
               {
                 echo "# Archive Info"
@@ -209,7 +209,7 @@ jobs:
                 echo "| File | Link |"
                 echo "|------|------|"
                 echo "| \`${RAND_ARCHIVE}.zip\` | [Get](${RAW_LINK}) |"
-              } > "_data/$RAND_FOLDER/info.txt"
+              } > "assets/_data/$RAND_FOLDER/info.txt"
             fi
             rm -rf _tmp
           else
@@ -218,26 +218,26 @@ jobs:
               SIZE=$(stat -c%s "$FILE")
               BASENAME=$(basename "$FILE")
               BASENAME_NO_EXT="${BASENAME%.*}"
-              RAND_FOLDER=$(get_unique_folder "_data" "item")
-              mkdir -p "_data/$RAND_FOLDER"
+              RAND_FOLDER=$(get_unique_folder "assets/_data" "item")
+              mkdir -p "assets/_data/$RAND_FOLDER"
               
               if [ "$SIZE" -gt "$SPLIT_THRESHOLD_BYTES" ]; then
                 echo "Splitting large file: $BASENAME"
                 if [ -n "$ZIP_PASSWORD" ]; then
-                  zip -0 -s "${SPLIT_THRESHOLD_MB}m" -P "$ZIP_PASSWORD" "_data/$RAND_FOLDER/${RAND_FOLDER}.zip" -j "$FILE"
+                  zip -0 -s "${SPLIT_THRESHOLD_MB}m" -P "$ZIP_PASSWORD" "assets/_data/$RAND_FOLDER/${RAND_FOLDER}.zip" -j "$FILE"
                 else
-                  zip -0 -s "${SPLIT_THRESHOLD_MB}m" "_data/$RAND_FOLDER/${RAND_FOLDER}.zip" -j "$FILE"
+                  zip -0 -s "${SPLIT_THRESHOLD_MB}m" "assets/_data/$RAND_FOLDER/${RAND_FOLDER}.zip" -j "$FILE"
                 fi
                 
-                PARTS_COUNT=$(ls _data/${RAND_FOLDER}/${RAND_FOLDER}.z* 2>/dev/null | wc -l)
+                PARTS_COUNT=$(ls assets/_data/${RAND_FOLDER}/${RAND_FOLDER}.z* 2>/dev/null | wc -l)
                 FOLDER_ENCODED=$(echo "${RAND_FOLDER}" | sed 's/ /%20/g')
                 
                 DOWNLOAD_LINKS=""
-                for part_file in "_data/${RAND_FOLDER}/${RAND_FOLDER}".z* "_data/${RAND_FOLDER}/${RAND_FOLDER}.zip"; do
+                for part_file in "assets/_data/${RAND_FOLDER}/${RAND_FOLDER}".z* "assets/_data/${RAND_FOLDER}/${RAND_FOLDER}.zip"; do
                   if [ -f "$part_file" ]; then
                     PART_BASENAME=$(basename "$part_file")
                     PART_ENCODED=$(echo "${PART_BASENAME}" | sed 's/ /%20/g')
-                    RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/_data/${FOLDER_ENCODED}/${PART_ENCODED}"
+                    RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/assets/_data/${FOLDER_ENCODED}/${PART_ENCODED}"
                     DOWNLOAD_LINKS="${DOWNLOAD_LINKS}| \`${PART_BASENAME}\` | [Get](${RAW_LINK}) |"$'\n'
                   fi
                 done
@@ -260,18 +260,18 @@ jobs:
                   echo "| File | Link |"
                   echo "|------|------|"
                   printf '%s' "${DOWNLOAD_LINKS}"
-                } > "_data/$RAND_FOLDER/info.txt"
+                } > "assets/_data/$RAND_FOLDER/info.txt"
               else
                 echo "Zipping: $RAND_FOLDER"
                 if [ -n "$ZIP_PASSWORD" ]; then
-                  zip -j -P "$ZIP_PASSWORD" "_data/$RAND_FOLDER/${RAND_FOLDER}.zip" "$FILE"
+                  zip -j -P "$ZIP_PASSWORD" "assets/_data/$RAND_FOLDER/${RAND_FOLDER}.zip" "$FILE"
                 else
-                  zip -j "_data/$RAND_FOLDER/${RAND_FOLDER}.zip" "$FILE"
+                  zip -j "assets/_data/$RAND_FOLDER/${RAND_FOLDER}.zip" "$FILE"
                 fi
                 
                 FILE_ENCODED=$(echo "${RAND_FOLDER}.zip" | sed 's/ /%20/g')
                 FOLDER_ENCODED=$(echo "${RAND_FOLDER}" | sed 's/ /%20/g')
-                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
+                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/assets/_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
                 
                 {
                   echo "# Archive Info"
@@ -293,14 +293,14 @@ jobs:
                   echo "|------|------|"
                   echo "| \`${RAND_FOLDER}.zip\` | [Get](${RAW_LINK}) |"
                   echo ""
-                } > "_data/$RAND_FOLDER/info.txt"
+                } > "assets/_data/$RAND_FOLDER/info.txt"
               fi
             done
             rm -rf _tmp
           fi
       - name: Update Index
         run: |
-          FOLDERS=$(find _data -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort)
+          FOLDERS=$(find assets/_data -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort)
           
           if [ -z "$FOLDERS" ]; then
             echo "No data found"
@@ -319,7 +319,7 @@ jobs:
           git config http.lowSpeedTime 999999
 
           git add README.md
-          git add _data/
+          git add assets/_data/
 
           if git diff --cached --quiet; then
             echo "No changes"
