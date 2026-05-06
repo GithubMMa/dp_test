@@ -1,0 +1,15 @@
+# Archive Info
+
+| Key | Value |
+|-----|-------|
+| **Original** | `item_nbnzj0ji` |
+| **Size** | 23 MB |
+| **Status** | **Done** |
+| **Locked** | **YES** |
+
+---
+
+| File | Link |
+|------|------|
+| `item_nbnzj0ji.zip` | [Get](https://github.com/GithubMMa/GithubMMa/dp_test/raw/main/assets/_data/item_nbnzj0ji/item_nbnzj0ji.zip) |
+
