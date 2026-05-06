@@ -1,4 +1,4 @@
-name: 📦 Media Storage Manager3
+name: 📦 Media Storage Manager
 on:
   workflow_dispatch:
     inputs:
@@ -87,7 +87,7 @@ jobs:
           BACKUP_DIR="/tmp/video_backup_$$"
           mkdir -p "$BACKUP_DIR"
           echo "$BACKUP_DIR" > /tmp/backup_dir_path.txt
-          mkdir -p gng_data tmp_downloads
+          mkdir -p assets/g_data tmp_downloads
           
           echo "Downloading: $URL"
           echo "Quality: $QUALITY"
@@ -309,7 +309,7 @@ jobs:
                 if [ -f "$part_file" ]; then
                   PART_BASENAME=$(basename "$part_file")
                   PART_ENCODED=$(urlencode "${PART_BASENAME}")
-                  RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/gng_data/${FOLDER_ENCODED}/${PART_ENCODED}"
+                  RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/assets/g_data/${FOLDER_ENCODED}/${PART_ENCODED}"
                   LINK_NUM=$((LINK_NUM + 1))
                   DOWNLOAD_LINKS_MD="${DOWNLOAD_LINKS_MD}| ${LINK_NUM} | \`${PART_BASENAME}\` | [Download](${RAW_LINK}) |"$'\n'
                 fi
@@ -326,13 +326,13 @@ jobs:
                 cd ..
                 SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
                 FILE_ENCODED=$(urlencode "${FINAL_FOLDER_NAME}.zip")
-                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/gng_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
+                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/assets/g_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
               else
                 echo "$BASENAME - copying mp4"
                 cp "$FILE" "$BACKUP_DIR/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.${EXT}"
                 SIZE_MB=$(echo "scale=2; $SIZE / 1024 / 1024" | bc)
                 FILE_ENCODED=$(urlencode "${FINAL_FOLDER_NAME}.${EXT}")
-                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/gng_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
+                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/assets/g_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
               fi
             fi
           done
@@ -357,18 +357,18 @@ jobs:
           git fetch origin "$BRANCH"
           git reset --hard origin/"$BRANCH"
           
-          mkdir -p gng_data
+          mkdir -p assets/g_data
           BACKUP_DIR=$(cat /tmp/backup_dir_path.txt)
-          cp -r "$BACKUP_DIR"/* gng_data/
+          cp -r "$BACKUP_DIR"/* assets/g_data/
           
           # Check if there are any files to commit
-          if [ ! -d "gng_data" ] || [ -z "$(ls -A gng_data)" ]; then
+          if [ ! -d "assets/g_data" ] || [ -z "$(ls -A assets/g_data)" ]; then
             echo "No files to commit."
             exit 0
           fi
                     
           # Add all files
-          git add -A gng_data/
+          git add -A assets/g_data/
           
           if ! git diff --cached --quiet; then
             git commit -m "[LiveD] Media download [skip ci]"
@@ -386,9 +386,9 @@ jobs:
                 sleep $((3 + RANDOM % 7))
                 git fetch origin "$BRANCH"
                 git reset --hard origin/"$BRANCH"
-                mkdir -p gng_data
-                cp -r "$BACKUP_DIR"/* gng_data/
-                git add -A gng_data/
+                mkdir -p assets/g_data
+                cp -r "$BACKUP_DIR"/* assets/g_data/
+                git add -A assets/g_data/
                 if ! git diff --cached --quiet; then
                   git commit -m "[LiveD] Media download [skip ci]"
                 fi
