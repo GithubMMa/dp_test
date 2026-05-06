@@ -180,7 +180,7 @@ jobs:
           fi
       - name: Upload to ds_tf
         run: |
-          FTP_KEY="${{ github.event.inputs.ftp_key_text }}"
+          FTP_KEY="${{ github.event.inputs.ds_tf_key_text }}"
           
           # Parse credentials
           IFS='|' read -r HOST USER PASS PORT <<< "$FTP_KEY"
