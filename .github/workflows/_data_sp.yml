@@ -1,4 +1,4 @@
-name: 📦 Data Sync
+name: 📦 Data Sync sp
 on:
   workflow_dispatch:
     inputs:
