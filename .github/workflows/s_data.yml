@@ -84,7 +84,7 @@ jobs:
           
           SLUG=$(echo "$URL" | sed 's/[^a-zA-Z0-9]/_/g' | cut -c1-100)
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          FOLDER="assetd/s_data/$DOMAIN/$SLUG/$TIMESTAMP"
+          FOLDER="assets/s_data/$DOMAIN/$SLUG/$TIMESTAMP"
           MEDIA_FOLDER="$FOLDER/media"
           mkdir -p "$FOLDER" "$MEDIA_FOLDER"
           
@@ -197,7 +197,7 @@ jobs:
 
       - name: Create zip archive of the timestamp folder
         run: |
-          cd assetd/s_data/$DOMAIN/$SLUG
+          cd assets/s_data/$DOMAIN/$SLUG
           zip -r "$TIMESTAMP.zip" "$TIMESTAMP"
           cd ../../..
 
