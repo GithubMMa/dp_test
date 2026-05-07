@@ -84,7 +84,7 @@ jobs:
           
           SLUG=$(echo "$URL" | sed 's/[^a-zA-Z0-9]/_/g' | cut -c1-100)
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          FOLDER="s_data/$DOMAIN/$SLUG/$TIMESTAMP"
+          FOLDER="assetd/s_data/$DOMAIN/$SLUG/$TIMESTAMP"
           MEDIA_FOLDER="$FOLDER/media"
           mkdir -p "$FOLDER" "$MEDIA_FOLDER"
           
@@ -197,23 +197,24 @@ jobs:
 
       - name: Create zip archive of the timestamp folder
         run: |
-          cd s_data/$DOMAIN/$SLUG
+          cd assetd/s_data/$DOMAIN/$SLUG
           zip -r "$TIMESTAMP.zip" "$TIMESTAMP"
           cd ../../..
 
       - name: Commit and push
         run: |
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          BRANCH="${GITHUB_REF_NAME}"
+          git config user.name "bot"
+          git config user.email "bot@github.com"
           
-          if git diff --staged --quiet; then
-            echo "Nothing to commit"
+          git add assets/s_data/
+          
+          if git diff --cached --quiet; then
+            echo "No changes"
             exit 0
           fi
+          git commit -m "[Sync] Update data [skip ci]"
+          git pull --rebase origin "$BRANCH"
+          git push origin HEAD:"$BRANCH"
           
-          git commit -m "Saved page with media and screenshot [skip ci]"
-          
-          # Push changes. Using 'origin' ensures it pushes to the remote repository.
-          # If the branch doesn't exist remotely, it will be created.
-          # We avoid 'git pull --rebase' to prevent conflicts if the remote has changed since checkout.
-          git push origin HEAD
+          echo "Pushed"
