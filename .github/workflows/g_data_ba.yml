@@ -9,7 +9,7 @@ on:
       quality:
         description: 'Media quality (best, 1080, 720, 480, audio)'
         required: false
-        default: 'best'
+        default: '720'
         type: string
       password:
         description: 'Password for zip files (optional)'
