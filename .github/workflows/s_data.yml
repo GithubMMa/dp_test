@@ -1,5 +1,4 @@
 name: 📦 Web Crawl Sync
-
 on:
   workflow_dispatch:
     inputs:
@@ -21,7 +20,7 @@ jobs:
 
       - name: Install system dependencies
         run: |
-          sudo apt-get install -y curl zip
+          sudo apt-get install -y curl zip sed grep
 
       - name: Setup Node and Puppeteer
         run: |
@@ -56,6 +55,7 @@ jobs:
           ENDOFSCRIPT
 
       - name: Visit URL and download media
+        id: crawl_step
         run: |
           set -e # Exit immediately if a command exits with a non-zero status
           
@@ -82,15 +82,20 @@ jobs:
           # Extract domain (remove protocol and optional www)
           DOMAIN=$(echo "$URL" | awk -F/ '{print $3}' | sed 's/^www\.//')
           
+          # Create a safe slug for folder names
           SLUG=$(echo "$URL" | sed 's/[^a-zA-Z0-9]/_/g' | cut -c1-100)
           TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-          FOLDER="assets/s_data/$DOMAIN/$SLUG/$TIMESTAMP"
+          
+          # Define paths
+          BASE_DIR="assets/s_data"
+          FOLDER="$BASE_DIR/$DOMAIN/$SLUG/$TIMESTAMP"
           MEDIA_FOLDER="$FOLDER/media"
+          
           mkdir -p "$FOLDER" "$MEDIA_FOLDER"
           
           # Download HTML
           echo "Downloading page HTML..."
-          curl -L -A "Mozilla/5.0" -o "$FOLDER/page.html" "$URL"
+          curl -L -A "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -o "$FOLDER/page.html" "$URL"
           
           # Take screenshot
           echo "Taking screenshot..."
@@ -99,13 +104,15 @@ jobs:
             SCREENSHOT_OK=true
           fi
           
-          # Extract links
-          grep -oP 'href="\K[^"]*' "$FOLDER/page.html" | sort -u > "$FOLDER/all_links.txt"
-          grep -oP 'src="\K[^"]*' "$FOLDER/page.html" | sort -u >> "$FOLDER/all_links.txt"
+          # Extract links using grep -oP (Perl regex)
+          # Note: grep might fail if no matches found, so we use || true
+          grep -oP 'href="\K[^"]*' "$FOLDER/page.html" 2>/dev/null | sort -u > "$FOLDER/all_links.txt" || true
+          grep -oP 'src="\K[^"]*' "$FOLDER/page.html" 2>/dev/null | sort -u >> "$FOLDER/all_links.txt" || true
           sort -u "$FOLDER/all_links.txt" -o "$FOLDER/all_links.txt"
           
           # Media types to download
           MEDIA_EXT="png|jpg|jpeg|gif|svg|webp|bmp|ico|mp3|wav|ogg|flac|aac|mp4|webm|avi|mov|mkv|pdf|doc|docx|xls|xlsx|ppt|pptx|zip|rar|tar|gz|7z"
+          
           > "$FOLDER/media_links.txt"
           > "$FOLDER/other_links.txt"
           > "$FOLDER/downloaded_media.md"
@@ -114,10 +121,12 @@ jobs:
           
           # Base URL for resolving relative links
           BASE_URL="${URL%%/*}"
-          BASE_DOMAIN=$(echo "$URL" | awk -F/ '{print $3}')
           
           while IFS= read -r link; do
             [ -z "$link" ] && continue
+            
+            # Skip anchor links or empty strings
+            [[ "$link" == \#* ]] && continue
             
             if [[ "$link" = /* ]]; then
               ABSOLUTE_URL="${BASE_URL}${link}"
@@ -127,13 +136,23 @@ jobs:
               ABSOLUTE_URL="${BASE_URL}/${link}"
             fi
             
+            # Extract extension safely
             ext="${link##*.}"
+            # If no extension found (e.g. link ends without dot), ext might be same as link
+            if [ "$ext" = "$link" ]; then
+              ext=""
+            fi
+            
             ext_lower=$(echo "$ext" | tr '[:upper:]' '[:lower:]')
             
             if echo "$ext_lower" | grep -Eq "^($MEDIA_EXT)$"; then
               echo "Downloading: $ABSOLUTE_URL"
               FILENAME=$(basename "$link" | sed 's/[?#].*//')
-              [ -f "$MEDIA_FOLDER/$FILENAME" ] && FILENAME="$(date +%s)_$FILENAME"
+              
+              # Handle duplicate filenames
+              if [ -f "$MEDIA_FOLDER/$FILENAME" ]; then
+                FILENAME="$(date +%s)_$FILENAME"
+              fi
               
               if curl -L --retry 2 --max-time 60 -o "$MEDIA_FOLDER/$FILENAME" "$ABSOLUTE_URL" 2>/dev/null; then
                 FILE_SIZE=$(stat -c%s "$MEDIA_FOLDER/$FILENAME" 2>/dev/null || echo 0)
@@ -187,7 +206,7 @@ jobs:
             echo "- Media: $MEDIA_COUNT"
           } > "$FOLDER/index.md"
           
-          # Save variables for zip step
+          # Export variables for subsequent steps
           echo "DOMAIN=$DOMAIN" >> $GITHUB_ENV
           echo "SLUG=$SLUG" >> $GITHUB_ENV
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
@@ -196,24 +215,33 @@ jobs:
 
       - name: Create zip archive of the timestamp folder
         run: |
-          cd assets/s_data/$DOMAIN/$SLUG
-          zip -r "$TIMESTAMP.zip" "$TIMESTAMP"
-          cd ../../..
+          # Use the variables set in the previous step
+          TARGET_DIR="assets/s_data/$DOMAIN/$SLUG"
+          ZIP_NAME="$TIMESTAMP.zip"
+          
+          if [ -d "$TARGET_DIR" ]; then
+            cd "$TARGET_DIR"
+            # Create zip inside the folder so paths inside are relative
+            zip -r "$ZIP_NAME" "$TIMESTAMP"
+            echo "Created zip: $ZIP_NAME"
+          else
+            echo "Directory not found: $TARGET_DIR"
+            exit 1
+          fi
 
       - name: Commit and push
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           
-          if git diff --staged --quiet; then
+          # Check if there are any changes to commit
+          if ! git diff --staged --quiet; then
+            git add -A
+            git commit -m "Saved page with media and screenshot [skip ci]"
+            
+            # Push changes
+            # Using 'origin' ensures it pushes to the remote repository.
+            git push origin HEAD
+          else
             echo "Nothing to commit"
-            exit 0
           fi
-          
-          git commit -m "Saved page with media and screenshot [skip ci]"
-          
-          # Push changes. Using 'origin' ensures it pushes to the remote repository.
-          # If the branch doesn't exist remotely, it will be created.
-          # We avoid 'git pull --rebase' to prevent conflicts if the remote has changed since checkout.
-          git push origin HEAD
-
