@@ -1,4 +1,5 @@
 name: 📦 Web Crawl Sync
+
 on:
   workflow_dispatch:
     inputs:
@@ -105,7 +106,6 @@ jobs:
           fi
           
           # Extract links using grep -oP (Perl regex)
-          # Note: grep might fail if no matches found, so we use || true
           grep -oP 'href="\K[^"]*' "$FOLDER/page.html" 2>/dev/null | sort -u > "$FOLDER/all_links.txt" || true
           grep -oP 'src="\K[^"]*' "$FOLDER/page.html" 2>/dev/null | sort -u >> "$FOLDER/all_links.txt" || true
           sort -u "$FOLDER/all_links.txt" -o "$FOLDER/all_links.txt"
@@ -216,7 +216,7 @@ jobs:
       - name: Create zip archive of the timestamp folder
         run: |
           # Use the variables set in the previous step
-          TARGET_DIR="assets/s_data/$DOMAIN/$SLUG"
+          TARGET_DIR="$BASE_DIR/$DOMAIN/$SLUG"
           ZIP_NAME="$TIMESTAMP.zip"
           
           if [ -d "$TARGET_DIR" ]; then
@@ -234,14 +234,29 @@ jobs:
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           
-          # Check if there are any changes to commit
-          if ! git diff --staged --quiet; then
-            git add -A
-            git commit -m "Saved page with media and screenshot [skip ci]"
-            
-            # Push changes
-            # Using 'origin' ensures it pushes to the remote repository.
-            git push origin HEAD
-          else
-            echo "Nothing to commit"
+          # Determine the current branch
+          CURRENT_BRANCH=$(git branch --show-current)
+          
+          # Ensure we are on the main branch
+          if [ -z "$CURRENT_BRANCH" ]; then
+            # If detached HEAD, checkout main
+            git checkout -b main
+          elif [ "$CURRENT_BRANCH" != "main" ]; then
+            # If on a different branch, switch to main
+            git checkout main
           fi
+          
+          # Add all changes
+          git add -A
+          
+          # Check if there are any changes to commit
+          if git diff --staged --quiet; then
+            echo "Nothing to commit"
+            exit 0
+          fi
+          
+          # Commit changes
+          git commit -m "Saved page with media and screenshot [skip ci]"
+          
+          # Push changes
+          git push origin HEAD
