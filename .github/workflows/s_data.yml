@@ -1,5 +1,4 @@
 name: 📦 Web Crawl Sync
-
 on:
   workflow_dispatch:
     inputs:
@@ -7,7 +6,6 @@ on:
         description: 'URL to visit'
         required: true
         type: string
-
 jobs:
   browse:
     runs-on: ubuntu-latest
@@ -18,16 +16,13 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 1
-
       - name: Install system dependencies
         run: |
           sudo apt-get install -y curl zip sed grep
-
       - name: Setup Node and Puppeteer
         run: |
           npm init -y
           npm install puppeteer
-
       - name: Create screenshot script
         run: |
           cat > screenshot.js << 'ENDOFSCRIPT'
@@ -54,7 +49,6 @@ jobs:
             }
           })();
           ENDOFSCRIPT
-
       - name: Visit URL and download media
         id: crawl_step
         run: |
@@ -138,7 +132,6 @@ jobs:
             
             # Extract extension safely
             ext="${link##*.}"
-            # If no extension found (e.g. link ends without dot), ext might be same as link
             if [ "$ext" = "$link" ]; then
               ext=""
             fi
@@ -212,7 +205,6 @@ jobs:
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
           
           echo "Done: $MEDIA_COUNT files downloaded"
-
       - name: Create zip archive of the timestamp folder
         run: |
           # Use the variables set in the previous step
@@ -228,35 +220,22 @@ jobs:
             echo "Directory not found: $TARGET_DIR"
             exit 1
           fi
-
       - name: Commit and push
         run: |
+          # 1. Configure Git identity
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
           
-          # Determine the current branch
-          CURRENT_BRANCH=$(git branch --show-current)
-          
-          # Ensure we are on the main branch
-          if [ -z "$CURRENT_BRANCH" ]; then
-            # If detached HEAD, checkout main
-            git checkout -b main
-          elif [ "$CURRENT_BRANCH" != "main" ]; then
-            # If on a different branch, switch to main
-            git checkout main
-          fi
-          
-          # Add all changes
+          # 2. Add all changes (new files, modified files)
           git add -A
           
-          # Check if there are any changes to commit
-          if git diff --staged --quiet; then
-            echo "Nothing to commit"
-            exit 0
+          # 3. Check if there are any changes to commit
+          if git diff --cached --quiet; then
+            echo "No changes detected. Skipping commit."
+          else
+            # 4. Commit the changes
+            git commit -m "Saved page with media and screenshot [skip ci]"
+            
+            # 5. Push changes explicitly to the current branch
+            git push origin HEAD --force-with-lease
           fi
-          
-          # Commit changes
-          git commit -m "Saved page with media and screenshot [skip ci]"
-          
-          # Push changes
-          git push origin HEAD
