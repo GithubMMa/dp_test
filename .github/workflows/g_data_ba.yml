@@ -169,19 +169,19 @@ jobs:
               RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | head -c 6)
               FOLDER_NAME="${NAME_WITHOUT_EXT}_${RANDOM_SUFFIX}"
               
-              mkdir -p "$BACKUP_DIR/$FOLDER_NAME"
+              mkdir -p "$BACKUP_DIR/$RANDOM_SUFFIX"
               
               if [ "$SIZE" -gt "$SPLIT_BYTES" ]; then
                 echo "Splitting large file..."
-                cp "$FILE" "$BACKUP_DIR/$FOLDER_NAME/temp_video.${EXT}"
+                cp "$FILE" "$BACKUP_DIR/$RANDOM_SUFFIX/${NAME_WITHOUT_EXT}.${EXT}"
                 
-                cd "$BACKUP_DIR/$FOLDER_NAME"
+                cd "$BACKUP_DIR/$RANDOM_SUFFIX"
                 if [ -n "$ZIP_PASSWORD" ]; then
-                  zip -0 -s "${SPLIT_MB}m" -P "$ZIP_PASSWORD" "video.zip" "temp_video.${EXT}"
+                  zip -0 -s "${SPLIT_MB}m" -P "$ZIP_PASSWORD" "video.zip" "${NAME_WITHOUT_EXT}.${EXT}"
                 else
-                  zip -0 -s "${SPLIT_MB}m" "video.zip" "temp_video.${EXT}"
+                  zip -0 -s "${SPLIT_MB}m" "video.zip" "${NAME_WITHOUT_EXT}.${EXT}"
                 fi
-                rm "temp_video.${EXT}"
+                rm "${NAME_WITHOUT_EXT}.${EXT}"
                 
                 for part in video.z*; do
                   if [ -f "$part" ]; then
@@ -192,17 +192,17 @@ jobs:
                 
               else
                 if [ -n "$ZIP_PASSWORD" ]; then
-                  cp "$FILE" "$BACKUP_DIR/$FOLDER_NAME/temp_video.${EXT}"
-                  cd "$BACKUP_DIR/$FOLDER_NAME"
-                  zip -j -P "$ZIP_PASSWORD" "${FOLDER_NAME}.zip" "temp_video.${EXT}"
-                  rm "temp_video.${EXT}"
+                  cp "$FILE" "$BACKUP_DIR/$RANDOM_SUFFIX/${NAME_WITHOUT_EXT}.${EXT}"
+                  cd "$BACKUP_DIR/$RANDOM_SUFFIX"
+                  zip -j -P "$ZIP_PASSWORD" "${FOLDER_NAME}.zip" "${NAME_WITHOUT_EXT}.${EXT}"
+                  rm "${NAME_WITHOUT_EXT}.${EXT}"
                   cd ../..
                 else
-                  cp "$FILE" "$BACKUP_DIR/$FOLDER_NAME/${FOLDER_NAME}.${EXT}"
+                  cp "$FILE" "$BACKUP_DIR/$RANDOM_SUFFIX/${FOLDER_NAME}.${EXT}"
                 fi
               fi
               
-              echo "Saved to: $BACKUP_DIR/$FOLDER_NAME"
+              echo "Saved to: $BACKUP_DIR/$RANDOM_SUFFIX"
             done
             
             rm -rf tmp_downloads/*
