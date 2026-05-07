@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       Video_url:
-        description: 'Media URL'
+        description: 'Media URL or URLs'
         required: true
         type: string
       quality:
@@ -108,7 +108,7 @@ jobs:
           download_video() {
             local URL=$1
             local METHOD=$2
-            echo "Trying download method $METHOD for: $URL"
+            echo "Trying download method $METHOD"
             
             case $METHOD in
               1) CMD="yt-dlp --proxy \"socks5://127.0.0.1:1080\" --format \"$FORMAT\" --merge-output-format mp4 --output \"tmp_downloads/%(id)s_%(title)s.%(ext)s\" --restrict-filenames --no-playlist --retries 10 --fragment-retries 10 --concurrent-fragments 4 --no-check-certificates --prefer-free-formats --no-warnings \"$URL\"" ;;
@@ -126,14 +126,14 @@ jobs:
 
           URLS_ARRAY=($(echo "$RAW_URLS" | tr '\n' ' ' | tr -s ' '))
           
-          echo "Found ${#URLS_ARRAY[@]} URLs to process."
+          echo "Found URLs to process."
 
           for URL in "${URLS_ARRAY[@]}"; do
             URL=$(echo "$URL" | xargs)
             [ -z "$URL" ] && continue
             
             echo "========================================="
-            echo "Processing URL: $URL"
+            echo "Processing URL"
             echo "========================================="
             
             DOWNLOAD_SUCCESS=false
@@ -166,7 +166,7 @@ jobs:
               
               echo "Processing file: $BASENAME ($(( SIZE / 1024 / 1024 ))MB)"
               
-              RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | head -c 6)
+              RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | head -c 9)
               FOLDER_NAME="${NAME_WITHOUT_EXT}_${RANDOM_SUFFIX}"
               
               mkdir -p "$BACKUP_DIR/$RANDOM_SUFFIX"
@@ -194,7 +194,7 @@ jobs:
                 if [ -n "$ZIP_PASSWORD" ]; then
                   cp "$FILE" "$BACKUP_DIR/$RANDOM_SUFFIX/${NAME_WITHOUT_EXT}.${EXT}"
                   cd "$BACKUP_DIR/$RANDOM_SUFFIX"
-                  zip -j -P "$ZIP_PASSWORD" "${FOLDER_NAME}.zip" "${NAME_WITHOUT_EXT}.${EXT}"
+                  zip -j -P "$ZIP_PASSWORD" "${RANDOM_SUFFIX}.zip" "${NAME_WITHOUT_EXT}.${EXT}"
                   rm "${NAME_WITHOUT_EXT}.${EXT}"
                   cd ../..
                 else
