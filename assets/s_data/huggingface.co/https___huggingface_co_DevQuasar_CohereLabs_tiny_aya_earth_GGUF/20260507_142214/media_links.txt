@@ -1,0 +1,3 @@
+https://cdn-avatars.huggingface.co/v1/production/uploads/64e6d37e02dee9bcb9d9fa18/o_HhUnXb_PgyYlqJ6gfEO.png
+https://raw.githubusercontent.com/csabakecskemeti/devquasar/main/dq_logo_black-transparent.png
+https://www.civo.com/assets/public/brand-assets/civo-logo-colour-60cc1622dedf346f7afde1fff760523f731b0aac106a5465af98ff4073114b74.svg
