@@ -1,3 +1,0 @@
-https://cdn-avatars.huggingface.co/v1/production/uploads/620760a26e3b7210c2ff1943/-s1gyJfvbE1RgO5iBeNOi.png
-https://qianwen-res.oss-accelerate.aliyuncs.com/Qwen3.6/logo.png
-https://qianwen-res.oss-cn-beijing.aliyuncs.com/Qwen3.6/Figures/qwen3.6_27b_score.png
