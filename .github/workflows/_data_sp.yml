@@ -1,4 +1,4 @@
-name: 📦 Data Sync sp
+name: 📦 Data Sync sp2
 on:
   workflow_dispatch:
     inputs:
@@ -15,6 +15,14 @@ on:
         required: false
         default: ''
         type: string
+      stage_number:
+        description: 'Stage number'
+        required: true
+        type: integer
+      all_stages:
+        description: 'Number of total stages'
+        required: true
+        type: integer
 jobs:
   sync-data:
     runs-on: ubuntu-latest
@@ -37,7 +45,6 @@ jobs:
           ZIP_PASSWORD="${{ github.event.inputs.password }}"
           SPLIT_THRESHOLD_MB=45
           SPLIT_THRESHOLD_BYTES=$(( SPLIT_THRESHOLD_MB * 1024 * 1024 ))
-          
           REPO_OWNER="${{ github.repository_owner }}"
           REPO_NAME="${{ github.repository }}"
           BRANCH="${GITHUB_REF_NAME}"
@@ -45,22 +52,19 @@ jobs:
           echo "Mode: $MODE"
           echo "Threshold: $SPLIT_THRESHOLD_MB MB"
           echo "Branch: $BRANCH"
-          
           if [ -n "$ZIP_PASSWORD" ]; then
             echo "Encryption: ON"
           else
             echo "Encryption: OFF"
           fi
-          
           mkdir -p assets/_data _tmp
           
-
           # Function to get folder name
           get_unique_folder() {
             local unique_folder_name="${{ github.event.inputs.unique_folder_name }}"
             echo "$unique_folder_name"
           }
-
+          
           create_error_file() {
             local ORIG_FILENAME="$1"
             local ERROR_MSG="$2"
@@ -83,7 +87,7 @@ jobs:
               echo "\`\`\`"
             } > "assets/_data/$U_F_NAME/log.txt"
           }
-
+          
           download_with_retry() {
             local URL="$1"
             local FILENAME="$2"
@@ -95,6 +99,7 @@ jobs:
             for ((attempt=1; attempt<=MAX_RETRIES; attempt++)); do
               echo "Attempt $attempt for $FILENAME"
               
+              # Try aria2 first
               ERROR_LOG=$(aria2c \
                 --split=2 \
                 --max-connection-per-server=2 \
@@ -125,7 +130,6 @@ jobs:
               sleep $RETRY_DELAY
               RETRY_DELAY=$((RETRY_DELAY * 2))
             done
-            
             if [ "$SUCCESS" = true ] && [ -f "_tmp/$FILENAME" ]; then
               if [ -s "_tmp/$FILENAME" ]; then
                 echo "OK: $FILENAME"
@@ -140,7 +144,7 @@ jobs:
               return 1
             fi
           }
-
+          
           # Process URLs
           for URL in $URLS; do
             FILENAME=$(basename "$URL" | sed 's/%20/ /g' | sed 's/%2F/-/g' | sed 's/[?#].*//')
@@ -148,20 +152,21 @@ jobs:
             echo "Fetching: $URL -> $FILENAME"
             download_with_retry "$URL" "$FILENAME" || echo "Failed: $FILENAME"
           done
-
+          
           if [ "$MODE" = "normal" ]; then
             for FILE in _tmp/*; do
               [ -f "$FILE" ] || continue
               SIZE=$(stat -c%s "$FILE")
               BASENAME=$(basename "$FILE")
               BASENAME_NO_EXT="${BASENAME%.*}"
-              
               U_F_NAME=$(get_unique_folder)
+              
               if [ -z "$U_F_NAME" ]; then
                 U_F_NAME="default_folder"
               fi
               
               mkdir -p "assets/_data/$U_F_NAME"
+              
               if [ "$SIZE" -gt "$SPLIT_THRESHOLD_BYTES" ]; then
                 echo "Splitting large file: $BASENAME"
                 if [ -n "$ZIP_PASSWORD" ]; then
@@ -169,20 +174,6 @@ jobs:
                 else
                   zip -0 -s "${SPLIT_THRESHOLD_MB}m" "assets/_data/$U_F_NAME/${U_F_NAME}.zip" -j "$FILE"
                 fi
-                
-                PARTS_COUNT=$(ls assets/_data/${U_F_NAME}/${U_F_NAME}.z* 2>/dev/null | wc -l)
-                FOLDER_ENCODED=$(echo "${U_F_NAME}" | sed 's/ /%20/g')
-                
-                DOWNLOAD_LINKS=""
-                for part_file in "assets/_data/${U_F_NAME}/${U_F_NAME}".z* "assets/_data/${U_F_NAME}/${U_F_NAME}.zip"; do
-                  if [ -f "$part_file" ]; then
-                    PART_BASENAME=$(basename "$part_file")
-                    PART_ENCODED=$(echo "${PART_BASENAME}" | sed 's/ /%20/g')
-                    RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/assets/_data/${FOLDER_ENCODED}/${PART_ENCODED}"
-                    DOWNLOAD_LINKS="${DOWNLOAD_LINKS}| \`${PART_BASENAME}\` | [Get](${RAW_LINK}) |"$'\n'
-                  fi
-                done
-
               else
                 echo "Zipping: $U_F_NAME"
                 if [ -n "$ZIP_PASSWORD" ]; then
@@ -190,57 +181,173 @@ jobs:
                 else
                   zip -j "assets/_data/$U_F_NAME/${U_F_NAME}.zip" "$FILE"
                 fi
-                
-                FILE_ENCODED=$(echo "${U_F_NAME}.zip" | sed 's/ /%20/g')
-                FOLDER_ENCODED=$(echo "${U_F_NAME}" | sed 's/ /%20/g')
-                RAW_LINK="https://github.com/${REPO_OWNER}/${REPO_NAME}/raw/${BRANCH}/assets/_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
-                
               fi
             done
+            
+            # ---- NEW: Filter parts based on the selected stage ----
+            STAGE="${{ github.event.inputs.stage_number }}"
+            TOTAL_STAGES="${{ github.event.inputs.all_stages }}"
+            echo "Filtering parts for stage $STAGE (1–$TOTAL_STAGES)"
+            
+            for ZIP_DIR in assets/_data/*; do
+              [ -d "$ZIP_DIR" ] || continue
+              U_F_NAME=$(basename "$ZIP_DIR")
+              
+              # Find all parts for this zip (including the main .zip)
+              # We list files and sort them to ensure correct numbering
+              # Files are named: name.zip, name.zip.1, name.zip.2, ...
+              PART_FILES=$(find "$ZIP_DIR" -maxdepth 1 -type f -name "${U_F_NAME}.zip*" 2>/dev/null | sort)
+              
+              # Count total parts
+              TOTAL_PARTS=$(echo "$PART_FILES" | wc -l)
+              
+              # If not split (only 1 file), keep it regardless of stage
+              if [ "$TOTAL_PARTS" -le 1 ]; then
+                continue
+              fi
+              
+              # Calculate parts per stage
+              # We want to distribute TOTAL_PARTS files across TOTAL_STAGES stages.
+              # Example: 9 files, 4 stages. 
+              # Stage 1: 1-2 (2 files)
+              # Stage 2: 3-4 (2 files)
+              # Stage 3: 5-6 (2 files)
+              # Stage 4: 7-9 (3 files) -> Remainder goes to last stage or distributed?
+              # Based on user example: 
+              # Stage 1: 1,2
+              # Stage 2: 3,4
+              # Stage 3: 5,6
+              # Stage 4: 7,8,9
+              # This implies a simple division where remainder is added to the last stage or distributed.
+              # Let's use integer division for base count and add remainder to the end.
+              
+              BASE_COUNT=$(( TOTAL_PARTS / TOTAL_STAGES ))
+              REMAINDER=$(( TOTAL_PARTS % TOTAL_STAGES ))
+              
+              # Calculate start and end indices for the current stage
+              # Stage 1 starts at 1
+              # Stage 2 starts at 1 + count_of_stage_1
+              
+              # Helper to calculate start index for a given stage (1-based)
+              calc_start() {
+                local s=$1
+                local total_stages=$2
+                local base=$3
+                local rem=$4
+                
+                # Files before this stage
+                local prev_files=$(( (s - 1) * base ))
+                # Add remainder files to previous stages if s > total_stages - rem
+                # Actually, simpler logic:
+                # If we have remainder, the first 'rem' stages get base+1 files, rest get base.
+                # Or last 'rem' stages get base+1. 
+                # Let's stick to the user's example logic which seems to fill evenly from start.
+                # User Example: 9 files, 4 stages. 
+                # 9/4 = 2 rem 1.
+                # If we distribute remainder to the end:
+                # S1: 2, S2: 2, S3: 2, S4: 3.
+                # If we distribute remainder to the start:
+                # S1: 3, S2: 2, S3: 2, S4: 2.
+                
+                # Let's implement: Remainder added to the LAST stages to keep numbering simple?
+                # Actually, the user's example:
+                # S1: 1,2 (2 files)
+                # S2: 3,4 (2 files)
+                # S3: 5,6 (2 files)
+                # S4: 7,8,9 (3 files)
+                # This means Remainder is added to the LAST stage.
+                
+                local count_before=$(( (s - 1) * base ))
+                # Check if this stage is among the last 'rem' stages that get an extra file
+                # Stages from (total_stages - rem + 1) to total_stages get extra file
+                if [ $s -gt $(( total_stages - rem )) ]; then
+                  count_before=$(( count_before + (s - (total_stages - rem)) ))
+                fi
+                
+                echo $(( count_before + 1 ))
+              }
+              
+              calc_end() {
+                local s=$1
+                local total_stages=$2
+                local base=$3
+                local rem=$4
+                
+                local start=$(calc_start $s $total_stages $base $rem)
+                
+                # Count files in this stage
+                local count_in_stage=$base
+                if [ $s -gt $(( total_stages - rem )) ]; then
+                  count_in_stage=$(( count_in_stage + 1 ))
+                fi
+                
+                echo $(( start + count_in_stage - 1 ))
+              }
+              
+              START_IDX=$(calc_start "$STAGE" "$TOTAL_STAGES" "$BASE_COUNT" "$REMAINDER")
+              END_IDX=$(calc_end "$STAGE" "$TOTAL_STAGES" "$BASE_COUNT" "$REMAINDER")
+              
+              echo "  $U_F_NAME: total=$TOTAL_PARTS, keep=$START_IDX–$END_IDX"
+              
+              # Iterate through files and assign index
+              INDEX=0
+              for PART_FILE in $PART_FILES; do
+                INDEX=$((INDEX + 1))
+                BASENAME=$(basename "$PART_FILE")
+                
+                # Check if this file's index is within the range for the current stage
+                if [ "$INDEX" -ge "$START_IDX" ] && [ "$INDEX" -le "$END_IDX" ]; then
+                  echo "    Keeping part $BASENAME (Index: $INDEX)"
+                else
+                  echo "    Deleting part $BASENAME (Index: $INDEX)"
+                  rm -f "$PART_FILE"
+                fi
+              done
+            done
+            # -------------------------------------------------------
+            
             rm -rf _tmp
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - name: Update Index
         run: |
           FOLDERS=$(find assets/_data -mindepth 1 -maxdepth 1 -type d -printf '%f\n' 2>/dev/null | sort)
-          
           if [ -z "$FOLDERS" ]; then
             echo "No data found"
             exit 0
           fi
-          
       - name: Commit & Push
         run: |
           BRANCH="${GITHUB_REF_NAME}"
-    
           git config user.name "bot"
           git config user.email "bot@github.com"
           git config http.postBuffer 524288000
           git config http.version HTTP/1.1
           git config http.lowSpeedLimit 0
           git config http.lowSpeedTime 999999
-
+          
           git add README.md
           git add assets/_data/
-
+          
           if git diff --cached --quiet; then
             echo "No changes"
             exit 0
           fi
-
+          
           git commit -m "[Sync] Update data [skip ci]"
-
+          
           git pull --rebase origin "$BRANCH" || {
             echo "Failed to pull, exiting"
             exit 1
           }
-
+          
           MAX_RETRIES=2
           RETRY_COUNT=0
           SUCCESS=false
-
+          
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
             echo "Attempting to push (Attempt $((RETRY_COUNT + 1))/$MAX_RETRIES)..."
-      
             if git push origin HEAD:"$BRANCH" 2>&1; then
               SUCCESS=true
               break
@@ -250,10 +357,10 @@ jobs:
               sleep 10
             fi
           done
-
+          
           if [ "$SUCCESS" = false ]; then
             echo "Failed to push after $MAX_RETRIES attempts."
             exit 1
           fi
-
+          
           echo "Pushed successfully"
