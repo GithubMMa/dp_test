@@ -16,7 +16,7 @@ on:
         default: ''
         type: string
       stage_number:
-        description: 'Stage number (1‑7)'
+        description: 'Stage number'
         required: true
         type: integer
       all_stages:
