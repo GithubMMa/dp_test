@@ -1,0 +1,4 @@
+https://github.com/fluidicon.png
+https://github.githubassets.com/assets/pinned-octocat-093da3e6fa40.svg
+https://github.githubassets.com/favicons/favicon.png
+https://github.githubassets.com/favicons/favicon.svg
