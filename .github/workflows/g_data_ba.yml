@@ -167,7 +167,7 @@ jobs:
               echo "Processing file: $BASENAME ($(( SIZE / 1024 / 1024 ))MB)"
               
               RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | head -c 9)
-              FOLDER_NAME="${NAME_WITHOUT_EXT}_${RANDOM_SUFFIX}"
+              FOLDER_NAME="${RANDOM_SUFFIX}"
               
               mkdir -p "$BACKUP_DIR/$RANDOM_SUFFIX"
               
