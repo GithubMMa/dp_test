@@ -1,9 +1,9 @@
-name: 📦 Media Storage Manager ba
+name: 📦 Media Storage Manager Batch
 on:
   workflow_dispatch:
     inputs:
       Video_url:
-        description: 'Media URL'
+        description: 'Media URLs (One per line or comma-separated)'
         required: true
         type: string
       quality:
@@ -16,6 +16,7 @@ on:
         required: false
         default: ''
         type: string
+
 jobs:
   download-Media:
     runs-on: ubuntu-latest
@@ -28,6 +29,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           fetch-depth: 1
+
       - name: Configure Git for Large Files
         run: |
           git config --global http.postBuffer 524288000
@@ -35,6 +37,7 @@ jobs:
           git config --global core.compression 0
           git config user.name "github-actions"
           git config user.email "github-actions@github.com"
+
       - name: Start WARP Container
         run: |
           echo "Starting Cloudflare WARP container..."
@@ -59,7 +62,7 @@ jobs:
               echo "$RESULT"
               break
             else
-              echo "Attempt $i/10 - WARP not ready yet, waiting..."
+              echo "Attempt $i/23 - WARP not ready yet, waiting..."
               sleep 5
             fi
           done
@@ -70,19 +73,23 @@ jobs:
             echo "WARP might not be fully active, but continuing anyway..."
             echo "Response: $FINAL"
           fi
+
       - name: Install Dependencies
         run: |
           sudo apt-get install -y python3-pip ffmpeg zip curl jq bc
           pip3 install --upgrade yt-dlp
-      - name: Download Media Video
+
+      - name: Download Media Video (Batch Processing)
         run: |
           RAW_URLS="${{ github.event.inputs.Video_url }}"
           QUALITY="${{ github.event.inputs.quality }}"
           ZIP_PASSWORD="${{ github.event.inputs.password }}"
           
+          # Split size: 45MB to stay under GitHub's recommended 50MB limit for single files
           SPLIT_MB=45
           SPLIT_BYTES=$(( SPLIT_MB * 1024 * 1024 ))
           
+          # Create a unique backup directory for this run
           BACKUP_DIR="/tmp/video_backup_$$"
           mkdir -p "$BACKUP_DIR"
           echo "$BACKUP_DIR" > /tmp/backup_dir_path.txt
@@ -90,68 +97,184 @@ jobs:
           
           echo "Processing URLs..."
           echo "Quality: $QUALITY"
-          echo "Password Protection: $([ -n "$ZIP_PASSWORD" ] && echo 'ENABLED' || echo 'DISABLED')"
-
+          echo "Backup dir: $BACKUP_DIR"
+          
+          # Normalize URLs: replace commas with newlines, trim whitespace, remove empty lines
+          URLS=$(echo "$RAW_URLS" | tr ',' '\n' | sed 's/^[[:space:]]*//;s/[[:space:]]*$//' | grep -v '^$')
+          
           urlencode() {
             python3 -c "import urllib.parse, sys; print(urllib.parse.quote(sys.argv[1], safe=''))" "$1"
           }
 
+          # Determine format based on quality
           case "$QUALITY" in
-            "audio") FORMAT="bestaudio" ;;
-            "best") FORMAT="bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" ;;
-            "1080") FORMAT="bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best" ;;
-            "720") FORMAT="bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best" ;;
-            "480") FORMAT="bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/best" ;;
-            *) FORMAT="bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" ;;
+            "audio")
+              FORMAT="bestaudio"
+              ;;
+            "best")
+              FORMAT="bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+              ;;
+            "1080")
+              FORMAT="bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best"
+              ;;
+            "720")
+              FORMAT="bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best"
+              ;;
+            "480")
+              FORMAT="bestvideo[height<=480][ext=mp4]+bestaudio[ext=m4a]/best[height<=480][ext=mp4]/best"
+              ;;
+            *)
+              FORMAT="bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best"
+              ;;
           esac
 
           download_video() {
-            local URL=$1
-            local METHOD=$2
-            echo "Trying download method $METHOD for: $URL"
-            
+            local METHOD=$1
+            local TARGET_URL=$2
+            echo "Trying download method $METHOD for: $TARGET_URL"
             case $METHOD in
-              1) CMD="yt-dlp --proxy \"socks5://127.0.0.1:1080\" --format \"$FORMAT\" --merge-output-format mp4 --output \"tmp_downloads/%(id)s_%(title)s.%(ext)s\" --restrict-filenames --no-playlist --retries 10 --fragment-retries 10 --concurrent-fragments 4 --no-check-certificates --prefer-free-formats --no-warnings \"$URL\"" ;;
-              2) CMD="yt-dlp --proxy \"socks5://127.0.0.1:1080\" --format \"$FORMAT\" --merge-output-format mp4 --output \"tmp_downloads/%(id)s_%(title)s.%(ext)s\" --restrict-filenames --no-playlist --retries 10 --fragment-retries 10 --user-agent \"Mozilla/5.0 (Linux; Android 12; SM-S906N Build/QP1A.190711.020) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36\" --extractor-args \"youtube:player_client=android\" \"$URL\"" ;;
-              3) CMD="yt-dlp --proxy \"socks5://127.0.0.1:1080\" --format \"$FORMAT\" --merge-output-format mp4 --output \"tmp_downloads/%(id)s_%(title)s.%(ext)s\" --restrict-filenames --no-playlist --retries 10 --fragment-retries 10 --user-agent \"Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1\" --extractor-args \"youtube:player_client=ios\" \"$URL\"" ;;
-              4) CMD="yt-dlp --proxy \"socks5://127.0.0.1:1080\" --format \"$FORMAT\" --merge-output-format mp4 --output \"tmp_downloads/%(id)s_%(title)s.%(ext)s\" --restrict-filenames --no-playlist --retries 10 --fragment-retries 10 --user-agent \"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\" --extractor-args \"youtube:player_client=web\" --add-header \"Accept-Language:en-US,en;q=0.9\" \"$URL\"" ;;
-              5) CMD="yt-dlp --format \"$FORMAT\" --merge-output-format mp4 --output \"tmp_downloads/%(id)s_%(title)s.%(ext)s\" --restrict-filenames --no-playlist --retries 10 --fragment-retries 10 --concurrent-fragments 4 --no-check-certificates --user-agent \"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36\" \"$URL\"" ;;
-              6) CMD="yt-dlp --proxy \"socks5://127.0.0.1:1080\" --format \"$FORMAT\" --merge-output-format mp4 --output \"tmp_downloads/%(id)s_%(title)s.%(ext)s\" --restrict-filenames --no-playlist --retries 10 --fragment-retries 10 --extractor-args \"youtube:player_client=tv_embedded\" \"$URL\"" ;;
+              1)
+                yt-dlp \
+                  --proxy "socks5://127.0.0.1:1080" \
+                  --format "$FORMAT" \
+                  --merge-output-format mp4 \
+                  --output "tmp_downloads/%(id)s_%(title)s.%(ext)s" \
+                  --restrict-filenames \
+                  --no-playlist \
+                  --retries 10 \
+                  --fragment-retries 10 \
+                  --concurrent-fragments 4 \
+                  --no-check-certificates \
+                  --prefer-free-formats \
+                  --no-warnings \
+                  "$TARGET_URL"
+                ;;
+              2)
+                yt-dlp \
+                  --proxy "socks5://127.0.0.1:1080" \
+                  --format "$FORMAT" \
+                  --merge-output-format mp4 \
+                  --output "tmp_downloads/%(id)s_%(title)s.%(ext)s" \
+                  --restrict-filenames \
+                  --no-playlist \
+                  --retries 10 \
+                  --fragment-retries 10 \
+                  --user-agent "Mozilla/5.0 (Linux; Android 12; SM-S906N Build/QP1A.190711.020) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.0.0 Mobile Safari/537.36" \
+                  --extractor-args "youtube:player_client=android" \
+                  "$TARGET_URL"
+                ;;
+              3)
+                yt-dlp \
+                  --proxy "socks5://127.0.0.1:1080" \
+                  --format "$FORMAT" \
+                  --merge-output-format mp4 \
+                  --output "tmp_downloads/%(id)s_%(title)s.%(ext)s" \
+                  --restrict-filenames \
+                  --no-playlist \
+                  --retries 10 \
+                  --fragment-retries 10 \
+                  --user-agent "Mozilla/5.0 (iPhone; CPU iPhone OS 16_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.0 Mobile/15E148 Safari/604.1" \
+                  --extractor-args "youtube:player_client=ios" \
+                  "$TARGET_URL"
+                ;;
+              4)
+                yt-dlp \
+                  --proxy "socks5://127.0.0.1:1080" \
+                  --format "$FORMAT" \
+                  --merge-output-format mp4 \
+                  --output "tmp_downloads/%(id)s_%(title)s.%(ext)s" \
+                  --restrict-filenames \
+                  --no-playlist \
+                  --retries 10 \
+                  --fragment-retries 10 \
+                  --user-agent "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+                  --extractor-args "youtube:player_client=web" \
+                  --add-header "Accept-Language:en-US,en;q=0.9" \
+                  "$TARGET_URL"
+                ;;
+              5)
+                yt-dlp \
+                  --format "$FORMAT" \
+                  --merge-output-format mp4 \
+                  --output "tmp_downloads/%(id)s_%(title)s.%(ext)s" \
+                  --restrict-filenames \
+                  --no-playlist \
+                  --retries 10 \
+                  --fragment-retries 10 \
+                  --concurrent-fragments 4 \
+                  --no-check-certificates \
+                  --user-agent "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36" \
+                  "$TARGET_URL"
+                ;;
+              6)
+                yt-dlp \
+                  --proxy "socks5://127.0.0.1:1080" \
+                  --format "$FORMAT" \
+                  --merge-output-format mp4 \
+                  --output "tmp_downloads/%(id)s_%(title)s.%(ext)s" \
+                  --restrict-filenames \
+                  --no-playlist \
+                  --retries 10 \
+                  --fragment-retries 10 \
+                  --extractor-args "youtube:player_client=tv_embedded" \
+                  "$TARGET_URL"
+                ;;
             esac
-            
-            eval $CMD
-            return $?
           }
 
-          echo "Found ${#URLS_ARRAY[@]} URLs to process."
-            
-            echo "========================================="
+          # Function to get a unique random folder name
+          RANDOM_WORDS=("alpha" "beta" "gamma" "delta" "epsilon" "zeta" "theta" "kappa" "lambda" "sigma" "omega" "nova" "star" "moon" "sun" "sky" "cloud" "river" "ocean" "mountain")
+          get_random_word() {
+            echo "${RANDOM_WORDS[$RANDOM % ${#RANDOM_WORDS[@]}]}_$RANDOM"
+          }
+          get_unique_folder() {
+            local BASE_PATH="$1"
+            local NAME="$2"
+            local CHECK_BACKUP="$3"
+            if [ ! -d "$BASE_PATH/$NAME" ] && [ ! -d "$BACKUP_DIR/$NAME" ]; then
+              echo "$NAME"
+              return
+            fi
+            local RANDOM_SUFFIX=$(get_random_word)
+            while [ -d "$BASE_PATH/${NAME}_${RANDOM_SUFFIX}" ] || [ -d "$BACKUP_DIR/${NAME}_${RANDOM_SUFFIX}" ]; do
+              RANDOM_SUFFIX=$(get_random_word)
+            done
+            echo "${NAME}_${RANDOM_SUFFIX}"
+          }
+
+          # Process each URL
+          while IFS= read -r URL; do
+            [ -z "$URL" ] && continue
+            echo "----------------------------------------"
             echo "Processing URL: $URL"
-            echo "========================================="
             
             DOWNLOAD_SUCCESS=false
             for METHOD in 1 2 3 4 5 6; do
-              if download_video "$URL" $METHOD; then
+              if download_video $METHOD "$URL"; then
                 DOWNLOAD_SUCCESS=true
                 echo "Download successful with method $METHOD!"
                 break
               else
-                echo "Method $METHOD failed, waiting..."
+                echo "Method $METHOD failed for $URL, waiting before next attempt..."
                 sleep $((RANDOM % 10 + 5))
               fi
             done
-            
+
             if [ "$DOWNLOAD_SUCCESS" = false ]; then
-              echo "ERROR: All methods failed for URL: $URL"
+              echo "All download methods failed for: $URL"
               continue
             fi
-            
-            echo "Download complete for this URL."
-            
+
+            echo "Download complete for: $URL"
+            echo "Files in tmp_downloads:"
+            ls -la tmp_downloads/
+
+            # Process downloaded files for this URL
+            # Note: yt-dlp might download multiple files if it's a playlist, but we used --no-playlist
+            # We assume the output is in tmp_downloads/
             
             for FILE in tmp_downloads/*; do
               [ -f "$FILE" ] || continue
-              
               SIZE=$(stat -c%s "$FILE")
               BASENAME=$(basename "$FILE")
               EXT="${BASENAME##*.}"
@@ -159,55 +282,83 @@ jobs:
               
               echo "Processing file: $BASENAME ($(( SIZE / 1024 / 1024 ))MB)"
               
-              RANDOM_SUFFIX=$(cat /dev/urandom | tr -dc 'a-z0-9' | head -c 6)
-              FOLDER_NAME="${NAME_WITHOUT_EXT}_${RANDOM_SUFFIX}"
+              # Generate a unique folder name for this specific video
+              FINAL_FOLDER_NAME=$(get_random_word)
+              mkdir -p "$BACKUP_DIR/${FINAL_FOLDER_NAME}"
+              echo "Created backup folder: $BACKUP_DIR/${FINAL_FOLDER_NAME}"
               
-              mkdir -p "$BACKUP_DIR/$FOLDER_NAME"
+              # Encode folder name for URL
+              FOLDER_ENCODED=$(urlencode "${FINAL_FOLDER_NAME}")
               
               if [ "$SIZE" -gt "$SPLIT_BYTES" ]; then
-                echo "Splitting large file..."
-                cp "$FILE" "$BACKUP_DIR/$FOLDER_NAME/${NAME_WITHOUT_EXT}.${EXT}"
+                echo "Splitting $BASENAME into ${SPLIT_MB}MB parts..."
+                cp "$FILE" "tmp_downloads/${FINAL_FOLDER_NAME}_temp.${EXT}"
+                cd tmp_downloads
                 
-                cd "$BACKUP_DIR/$FOLDER_NAME"
                 if [ -n "$ZIP_PASSWORD" ]; then
-                  zip -0 -s "${SPLIT_MB}m" -P "$ZIP_PASSWORD" "video.zip" "${NAME_WITHOUT_EXT}.${EXT}"
+                  zip -0 -s "${SPLIT_MB}m" -P "$ZIP_PASSWORD" "${FINAL_FOLDER_NAME}_temp.zip" "${FINAL_FOLDER_NAME}_temp.${EXT}"
                 else
-                  zip -0 -s "${SPLIT_MB}m" "video.zip" "${NAME_WITHOUT_EXT}.${EXT}"
+                  zip -0 -s "${SPLIT_MB}m" "${FINAL_FOLDER_NAME}_temp.zip" "${FINAL_FOLDER_NAME}_temp.${EXT}"
                 fi
-                rm "${NAME_WITHOUT_EXT}.${EXT}"
-
-                for part in video.z*; do
+                
+                # Move split parts to backup folder
+                for part in ${FINAL_FOLDER_NAME}_temp.z[0-9]* ${FINAL_FOLDER_NAME}_temp.zip; do
                   if [ -f "$part" ]; then
-                    mv "$part" "${FOLDER_NAME}.${part#video.}"
+                    PART_EXT="${part##*.}"
+                    mv "$part" "$BACKUP_DIR/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.${PART_EXT}"
+                    echo "  Created: ${FINAL_FOLDER_NAME}.${PART_EXT}"
                   fi
                 done
-                cd ../..
+                rm -f "${FINAL_FOLDER_NAME}_temp.${EXT}"
+                cd ..
                 
+                # Generate download links for split parts
+                for part_file in "$BACKUP_DIR/${FINAL_FOLDER_NAME}"/*; do
+                  if [ -f "$part_file" ]; then
+                    PART_BASENAME=$(basename "$part_file")
+                    PART_ENCODED=$(urlencode "${PART_BASENAME}")
+                    RAW_LINK="https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/raw/${GITHUB_REF_NAME}/assets/g_data/${FOLDER_ENCODED}/${PART_ENCODED}"
+                    echo "Link for ${PART_BASENAME}: ${RAW_LINK}"
+                  fi
+                done
+
               else
                 if [ -n "$ZIP_PASSWORD" ]; then
-                  cp "$FILE" "$BACKUP_DIR/$FOLDER_NAME/${NAME_WITHOUT_EXT}.${EXT}"
-                  cd "$BACKUP_DIR/$FOLDER_NAME"
-                  zip -j -P "$ZIP_PASSWORD" "${FOLDER_NAME}.zip" "${NAME_WITHOUT_EXT}.${EXT}"
-                  rm "${NAME_WITHOUT_EXT}.${EXT}"
-                  cd ../..
+                  echo "$BASENAME - creating password-protected zip"
+                  cp "$FILE" "tmp_downloads/${FINAL_FOLDER_NAME}_temp.${EXT}"
+                  cd tmp_downloads
+                  zip -j -P "$ZIP_PASSWORD" "${FINAL_FOLDER_NAME}_temp.zip" "${FINAL_FOLDER_NAME}_temp.${EXT}"
+                  mv "${FINAL_FOLDER_NAME}_temp.zip" "$BACKUP_DIR/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.zip"
+                  rm -f "${FINAL_FOLDER_NAME}_temp.${EXT}"
+                  cd ..
+                  
+                  FILE_ENCODED=$(urlencode "${FINAL_FOLDER_NAME}.zip")
+                  RAW_LINK="https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/raw/${GITHUB_REF_NAME}/assets/g_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
+                  echo "Link for ${FINAL_FOLDER_NAME}.zip: ${RAW_LINK}"
                 else
-                  cp "$FILE" "$BACKUP_DIR/$FOLDER_NAME/${FOLDER_NAME}.${EXT}"
+                  echo "$BASENAME - copying mp4"
+                  cp "$FILE" "$BACKUP_DIR/${FINAL_FOLDER_NAME}/${FINAL_FOLDER_NAME}.${EXT}"
+                  FILE_ENCODED=$(urlencode "${FINAL_FOLDER_NAME}.${EXT}")
+                  RAW_LINK="https://github.com/${{ github.repository_owner }}/${{ github.event.repository.name }}/raw/${GITHUB_REF_NAME}/assets/g_data/${FOLDER_ENCODED}/${FILE_ENCODED}"
+                  echo "Link for ${FINAL_FOLDER_NAME}.${EXT}: ${RAW_LINK}"
                 fi
               fi
-              
-              echo "Saved to: $BACKUP_DIR/$FOLDER_NAME"
             done
             
+            # Clean up tmp_downloads for next iteration
             rm -rf tmp_downloads/*
             
-          done # End of URL Loop
+          done <<< "$URLS"
 
-          echo "========================================="
-          echo "All downloads processed. Preparing for commit."
-          echo "========================================="
+          echo ""
+          echo "===== Backup folder contents ====="
+          find "$BACKUP_DIR" -type f | head -50
           
-          echo "Backup contents:"
-          ls -R "$BACKUP_DIR"
+      - name: Stop WARP Container
+        if: always()
+        run: |
+          docker stop warp || true
+          docker rm warp || true
 
       - name: Commit and Push Files
         run: |
@@ -222,20 +373,24 @@ jobs:
           mkdir -p assets/g_data
           BACKUP_DIR=$(cat /tmp/backup_dir_path.txt)
           
+          # Copy all backup files to assets/g_data
           if [ -d "$BACKUP_DIR" ] && [ "$(ls -A $BACKUP_DIR)" ]; then
             cp -r "$BACKUP_DIR"/* assets/g_data/
           fi
           
+          # Check if there are any files to commit
           if [ ! -d "assets/g_data" ] || [ -z "$(ls -A assets/g_data)" ]; then
             echo "No files to commit."
             exit 0
           fi
-          
+                  
+          # Add all files
           git add -A assets/g_data/
           
           if ! git diff --cached --quiet; then
-            git commit -m "[LiveD] Batch Media download [skip ci]"
+            git commit -m "[LiveD] Media download batch [skip ci]"
             
+            # Push with retries
             PUSH_RETRY=0
             while [ $PUSH_RETRY -lt 10 ]; do
               PUSH_RETRY=$((PUSH_RETRY + 1))
@@ -248,10 +403,11 @@ jobs:
                 sleep $((3 + RANDOM % 7))
                 git fetch origin "$BRANCH"
                 git reset --hard origin/"$BRANCH"
+                mkdir -p assets/g_data
                 cp -r "$BACKUP_DIR"/* assets/g_data/
                 git add -A assets/g_data/
                 if ! git diff --cached --quiet; then
-                  git commit -m "[LiveD] Batch Media download [skip ci]"
+                  git commit -m "[LiveD] Media download batch [skip ci]"
                 fi
               fi
             done
