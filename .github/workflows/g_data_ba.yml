@@ -185,7 +185,7 @@ jobs:
                 
                 for part in video.z*; do
                   if [ -f "$part" ]; then
-                    mv "$part" "${FOLDER_NAME}.${part#video.}"
+                    mv "$part" "${RANDOM_SUFFIX}.${part#video.}"
                   fi
                 done
                 cd ../..
