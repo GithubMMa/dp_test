@@ -1,0 +1,67 @@
+# Visited: https://huggingface.co/mradermacher/gemma-3-27b-it-GGUF/tree/main
+**Time:** Fri May  8 00:15:58 UTC 2026
+
+## Screenshot
+![Screenshot](./screenshot.png)
+
+## Raw HTML
+[page.html](./page.html)
+
+## Downloaded Media (0 files)
+_No media files downloaded_
+
+## Other Links
+- [/](/)
+- [/datasets](/datasets)
+- [/docs](/docs)
+- [/enterprise](/enterprise)
+- [/front/build/kube-87b6ff9/style.css](/front/build/kube-87b6ff9/style.css)
+- [/join](/join)
+- [/js/script.js](/js/script.js)
+- [/login](/login)
+- [/models](/models)
+- [/models?language=en](/models?language=en)
+- [/models?library=gguf](/models?library=gguf)
+- [/models?library=transformers](/models?library=transformers)
+- [/models?other=conversational](/models?other=conversational)
+- [/mradermacher](/mradermacher)
+- [/mradermacher/gemma-3-27b-it-GGUF](/mradermacher/gemma-3-27b-it-GGUF)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/.gitattributes](/mradermacher/gemma-3-27b-it-GGUF/blob/main/.gitattributes)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/README.md](/mradermacher/gemma-3-27b-it-GGUF/blob/main/README.md)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.IQ4_XS.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.IQ4_XS.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q2_K.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q2_K.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q3_K_L.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q3_K_L.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q3_K_M.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q3_K_M.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q3_K_S.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q3_K_S.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q4_K_M.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q4_K_M.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q4_K_S.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q4_K_S.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q5_K_M.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q5_K_M.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q5_K_S.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q5_K_S.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q6_K.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q6_K.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q8_0.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.Q8_0.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.mmproj-Q8_0.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.mmproj-Q8_0.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.mmproj-f16.gguf](/mradermacher/gemma-3-27b-it-GGUF/blob/main/gemma-3-27b-it.mmproj-f16.gguf)
+- [/mradermacher/gemma-3-27b-it-GGUF/colab](/mradermacher/gemma-3-27b-it-GGUF/colab)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/360d1692a5efe90afbe4fffbf5268d586d30df43](/mradermacher/gemma-3-27b-it-GGUF/commit/360d1692a5efe90afbe4fffbf5268d586d30df43)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/3f43bbf50d870665cf4267aac7dbd101cb0c9f8f](/mradermacher/gemma-3-27b-it-GGUF/commit/3f43bbf50d870665cf4267aac7dbd101cb0c9f8f)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/610595c70361cc87c4f684ce5d4cb1594444d4ef](/mradermacher/gemma-3-27b-it-GGUF/commit/610595c70361cc87c4f684ce5d4cb1594444d4ef)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/7316005f1bc3919fc1b6eb4899d1a4f3138a4ef3](/mradermacher/gemma-3-27b-it-GGUF/commit/7316005f1bc3919fc1b6eb4899d1a4f3138a4ef3)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/7b2021b5f336ad27f1e114bbfd1dd63f62449dbe](/mradermacher/gemma-3-27b-it-GGUF/commit/7b2021b5f336ad27f1e114bbfd1dd63f62449dbe)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/7cf0711a6372a41ca29e07ab37c1cda31db7a7f8](/mradermacher/gemma-3-27b-it-GGUF/commit/7cf0711a6372a41ca29e07ab37c1cda31db7a7f8)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/89c69f31eb812b8ca8588a0ff7b58d4f1585de40](/mradermacher/gemma-3-27b-it-GGUF/commit/89c69f31eb812b8ca8588a0ff7b58d4f1585de40)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/92dd3e306ec7b2b05f898e299739b3f2986bbe88](/mradermacher/gemma-3-27b-it-GGUF/commit/92dd3e306ec7b2b05f898e299739b3f2986bbe88)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/94f52ed23c42c9125aa5b2ce994c4e83e7c9d781](/mradermacher/gemma-3-27b-it-GGUF/commit/94f52ed23c42c9125aa5b2ce994c4e83e7c9d781)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/9e38648aaee9fac9d9c537d704842bf8b4018e0b](/mradermacher/gemma-3-27b-it-GGUF/commit/9e38648aaee9fac9d9c537d704842bf8b4018e0b)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/a14929434d2450734943615974aee6d61d0124b0](/mradermacher/gemma-3-27b-it-GGUF/commit/a14929434d2450734943615974aee6d61d0124b0)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/ad3e732ecaea1098320c13051d15afbeed1b5ea8](/mradermacher/gemma-3-27b-it-GGUF/commit/ad3e732ecaea1098320c13051d15afbeed1b5ea8)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/c0560bc15c3f3a0a3e1f6cc574e27c8c25c52a3c](/mradermacher/gemma-3-27b-it-GGUF/commit/c0560bc15c3f3a0a3e1f6cc574e27c8c25c52a3c)
+- [/mradermacher/gemma-3-27b-it-GGUF/commit/ce34652f5b7eabe2b48a59c00a7324a35801973b](/mradermacher/gemma-3-27b-it-GGUF/commit/ce34652f5b7eabe2b48a59c00a7324a35801973b)
+- [/mradermacher/gemma-3-27b-it-GGUF/commits/main](/mradermacher/gemma-3-27b-it-GGUF/commits/main)
+- [/mradermacher/gemma-3-27b-it-GGUF/discussions](/mradermacher/gemma-3-27b-it-GGUF/discussions)
+- [/mradermacher/gemma-3-27b-it-GGUF/kaggle](/mradermacher/gemma-3-27b-it-GGUF/kaggle)
+- [/mradermacher/gemma-3-27b-it-GGUF/resolve/main/.gitattributes?download=true](/mradermacher/gemma-3-27b-it-GGUF/resolve/main/.gitattributes?download=true)
+- [/mradermacher/gemma-3-27b-it-GGUF/resolve/main/README.md?download=true](/mradermacher/gemma-3-27b-it-GGUF/resolve/main/README.md?download=true)
+
+## Stats
+- Links: 85
+- Media: 0
