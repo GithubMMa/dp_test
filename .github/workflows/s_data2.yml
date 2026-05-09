@@ -7,6 +7,10 @@ on:
         description: 'URL to visit'
         required: true
         type: string
+      password:
+        description: 'Password for the final zip file'
+        required: true
+        type: string
 
 jobs:
   browse:
@@ -60,6 +64,7 @@ jobs:
           set -e # Exit immediately if a command exits with a non-zero status
           
           RAW_URL="${{ github.event.inputs.url }}"
+          PASSWORD="${{ github.event.inputs.password }}"
           
           # Normalize URL: try HTTPS first if no protocol given
           if [[ ! "$RAW_URL" =~ ^https?:// ]]; then
@@ -187,19 +192,30 @@ jobs:
             echo "- Media: $MEDIA_COUNT"
           } > "$FOLDER/index.md"
           
-          
           # Save variables for zip step
           echo "DOMAIN=$DOMAIN" >> $GITHUB_ENV
           echo "SLUG=$SLUG" >> $GITHUB_ENV
           echo "TIMESTAMP=$TIMESTAMP" >> $GITHUB_ENV
+          echo "PASSWORD=$PASSWORD" >> $GITHUB_ENV
           
           echo "Done: $MEDIA_COUNT files downloaded"
 
-      - name: Create zip archive of the timestamp folder
+      - name: Create password-protected zip archive
         run: |
+          # Navigate to the parent folder of the timestamp folder
           cd assets/s_data/$DOMAIN/$SLUG
-          zip -r "$TIMESTAMP.zip" "$TIMESTAMP"
-          cd ../../..
+          
+          # Create zip with encryption using the password from env
+          # -e enables encryption, -P provides the password
+          zip -r -P "$PASSWORD" "$TIMESTAMP.zip" "$TIMESTAMP"
+          
+          # Move the zip to the assets/s_data root or keep it inside the slug folder as requested
+          # Based on "push to assets/s_data", I will place it there. 
+          # If you want it inside the slug folder, remove the mv command below.
+          mv "$TIMESTAMP.zip" ../../
+          
+          # Clean up the extracted folder to save space in the repo (optional but recommended)
+          rm -rf "$TIMESTAMP"
 
       - name: Commit and push
         run: |
@@ -207,7 +223,8 @@ jobs:
           git config user.name "bot"
           git config user.email "bot@github.com"
           
-          git add assets/s_data/
+          # Add only the zip file to avoid committing large extracted folders again
+          git add assets/s_data/*.zip
           
           if git diff --cached --quiet; then
             echo "No changes"
