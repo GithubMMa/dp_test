@@ -3,7 +3,7 @@ on:
   workflow_dispatch:
     inputs:
       data_links:
-        description: 'Data url (space separated)'
+        description: 'Data url'
         required: true
         type: string
       encryption_password:
@@ -11,10 +11,10 @@ on:
         required: true
         type: string
       release_tag:
-        description: 'tg v (optional, leave empty for auto)'
-        required: false
+        description: 'tg v'
+        required: true
         type: string
-        default: ''
+        default: 'v1.0'
 
 jobs:
   build-and-release:
@@ -25,7 +25,6 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          sudo apt-get update
           sudo apt-get install -y zip unzip parallel curl jq
 
       - name: Prepare Random Name and Directories
@@ -36,7 +35,6 @@ jobs:
           
           mkdir -p downloads
           mkdir -p output
-          echo "Random Name: $RANDOM_NAME"
 
       - name: Download Files in Parallel
         run: |
@@ -46,9 +44,6 @@ jobs:
           
           for link in "${LINKS[@]}"; do
             link=$(echo $link | xargs)
-            # Skip empty links
-            [ -z "$link" ] && continue
-            
             filename=$(basename "$link")
             echo "Downloading $filename..."
             curl -L -o "downloads/$filename" "$link" &
@@ -56,7 +51,6 @@ jobs:
           
           wait
           echo "Downloads completed."
-          ls -lh downloads/
 
       - name: Split and Encrypt Files
         run: |
@@ -65,37 +59,28 @@ jobs:
           
           mkdir -p output
           
-          FILE_COUNT=0
           for file in downloads/*; do
             if [ -f "$file" ]; then
               echo "Processing: $file"
               base_name=$(basename "$file")
+              name_without_ext="${base_name%.*}"
               
-              # Create a unique zip for each file to avoid overwriting
-              # Using -s 1024m for split, but note: -s creates multiple files with suffixes
-              # If you want a single zip per file, remove -s or handle suffixes
               zip -e -P "$PASSWORD" -j -s 1024m -0 "output/${PREFIX}.zip" "$file"
               
-              FILE_COUNT=$((FILE_COUNT + 1))
+              echo "Created split encrypted zip files in output/"
             fi
           done
           
-          echo "Created split encrypted zip files in output/"
+          echo "Listing output files:"
           ls -lh output/
-          
-          if [ "$FILE_COUNT" -eq 0 ]; then
-            echo "No files were processed!"
-            exit 1
-          fi
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          # If release_tag input is empty, generate a random tag
-          tag_name: ${{ github.event.inputs.release_tag || format('v-{0}-{1}', github.run_number, RANDOM_NAME) }}
-          name: "Release ${{ github.run_number }}"
+          tag_name: ${{ github.event.inputs.release_tag }}
+          name: "Version of dp_test Neural Network files Release"
           body: "Release of beta version of dp_test files for testing ai base live upload to GitHub by the project"
-          draft: false
+          draft: true
           prerelease: false
           files: output/*
         env:
