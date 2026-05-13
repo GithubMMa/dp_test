@@ -15,6 +15,7 @@ on:
         required: true
         type: string
         default: 'v1.0'
+
 jobs:
   build-and-release:
     runs-on: ubuntu-latest
@@ -53,18 +54,25 @@ jobs:
 
       - name: Split and Encrypt Files
         run: |
-         PASSWORD="${{ github.event.inputs.encryption_password }}"
-         PREFIX="${RANDOM_NAME}"
-         mkdir -p "${PREFIX}_output"
-         for file in downloads/*; do
-           if [ -f "$file" ]; then
-             echo "Processing: $file"
-             base_name=$(basename "$file")
-             zip -e -P "$PASSWORD" -j -s 1024m -0 "${PREFIX}_output/${PREFIX}.zip" "$file"
-             echo "Created split encrypted zip files in ${PREFIX}_output/"
-           fi
-         done
-          ls -lh "${PREFIX}_output/"
+          PASSWORD="${{ github.event.inputs.encryption_password }}"
+          PREFIX="${RANDOM_NAME}"
+          
+          mkdir -p output
+          
+          for file in downloads/*; do
+            if [ -f "$file" ]; then
+              echo "Processing: $file"
+              base_name=$(basename "$file")
+              name_without_ext="${base_name%.*}"
+              
+              zip -e -P "$PASSWORD" -j -s 1024m -0 "output/${PREFIX}.zip" "$file"
+              
+              echo "Created split encrypted zip files in output/"
+            fi
+          done
+          
+          echo "Listing output files:"
+          ls -lh output/
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
