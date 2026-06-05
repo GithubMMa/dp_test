@@ -1,0 +1,13 @@
+# Error Log
+
+| Key | Value |
+|-----|-------|
+| **Target** | `gallery-dl.exe` |
+| **Source** | https://codeberg.org/mikf/gallery-dl/releases/download/v1.32.1/gallery-dl.exe%20https://codeberg.org/mikf/gallery-dl/releases/download/v1.32.1/gallery-dl.exe |
+| **Time** | 2026-06-05 13:08:32 UTC |
+| **Result** | **FAILED** |
+---
+## Error
+```
+#=#=#                                                                          ##O#-#                                                                         curl: (22) The requested URL returned error: 404
+```
